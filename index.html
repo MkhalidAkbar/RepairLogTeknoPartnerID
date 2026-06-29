@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FixTrack — Portofolio Teknisi Laptop</title>
+<title>RepairLog — Portofolio Teknisi Laptop</title>
 <style>
   :root{--bg:#0f172a;--card:#1e293b;--card2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#6366f1;--border:#334155;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
@@ -21,10 +21,15 @@
   .btn.danger{background:#dc2626;}
   .btn.small{padding:6px 12px;font-size:13px;}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:28px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:20px;}
   .stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;}
   .stat .num{font-size:30px;font-weight:800;}
   .stat .lbl{color:var(--muted);font-size:13px;margin-top:4px;}
+  .insight{background:linear-gradient(135deg,#312e81,#1e293b);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:24px;font-size:14px;line-height:1.6;}
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+  .chartbox{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+  .chartbox h3{font-size:14px;margin-bottom:12px;color:var(--muted);}
+  .chartbox canvas{max-height:260px;}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
   .card h3{font-size:16px;}
   .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
@@ -32,11 +37,15 @@
   .pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
   .pill.proses{background:#78350f;color:#fcd34d;}
   .pill.selesai{background:#064e3b;color:#6ee7b7;}
+  .chip{display:inline-block;background:var(--card2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-size:11px;margin:2px 2px 0 0;}
   .muted{color:var(--muted);font-size:13px;}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
   input,select,textarea{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;width:100%;}
   textarea{min-height:80px;resize:vertical;}
   label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600;}
+  .checks{display:flex;flex-wrap:wrap;gap:8px;}
+  .chk{display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);padding:6px 10px;border-radius:8px;font-size:13px;width:auto;cursor:pointer;}
+  .chk input{width:auto;}
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:30px;z-index:100;overflow:auto;}
   .modal-bg.open{display:flex;}
   .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:680px;width:100%;}
@@ -48,12 +57,12 @@
   .empty{text-align:center;color:var(--muted);padding:60px 20px;}
   .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
   .warn{background:#7f1d1d;color:#fecaca;padding:14px 18px;border-radius:10px;margin:16px 24px;display:none;}
-  @media(max-width:600px){.ba{grid-template-columns:1fr;}nav button{padding:8px 10px;}}
+  @media(max-width:600px){.ba,.charts{grid-template-columns:1fr;}nav button{padding:8px 10px;}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🛠️ FixTrack <small>Portofolio Teknisi Laptop</small></h1>
+  <h1>🛠️ Repair Log <small>Portofolio Teknisi Laptop</small></h1>
   <nav>
     <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
     <button id="navList" onclick="showTab('list')">Laporan</button>
@@ -67,6 +76,12 @@
   <!-- DASHBOARD -->
   <div id="tab-dash">
     <div class="stat-grid" id="statGrid"></div>
+    <div class="insight" id="insight"></div>
+    <div class="charts">
+      <div class="chartbox"><h3>📊 Pengerjaan 14 Hari Terakhir</h3><canvas id="chartDay"></canvas></div>
+      <div class="chartbox"><h3>🍩 Distribusi per Level</h3><canvas id="chartLevel"></canvas></div>
+      <div class="chartbox" style="grid-column:1/-1"><h3>📈 Komponen Paling Sering Diperbaiki</h3><canvas id="chartComp"></canvas></div>
+    </div>
     <h2 style="margin-bottom:14px">📌 Pekerjaan Terbaru</h2>
     <div class="grid" id="recentGrid"></div>
   </div>
@@ -111,6 +126,8 @@
       <div><label>Status</label>
         <select id="f_status"><option>Proses</option><option>Selesai</option></select></div>
     </div>
+    <label>Komponen / Bagian yang diperbaiki</label>
+    <div class="checks" id="compChecks"></div>
     <label>Pekerjaan yang dilakukan</label>
     <textarea id="f_tasks" placeholder="cth: bongkar, bersihkan kipas, ganti thermal paste, pasang kembali..."></textarea>
 
@@ -146,6 +163,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
 // ====== KONFIGURASI SUPABASE (WAJIB DIISI) ======
 const SUPABASE_URL = 'https://yahxcwqfuackrbyubppc.supabase.co';      // cth: https://abcd.supabase.co
@@ -165,12 +183,22 @@ const LEVELS={
   3:{name:'Level 3 - Berat',color:'#f59e0b'},
   4:{name:'Level 4 - Sangat Berat',color:'#ef4444'}
 };
+const COMPONENTS=['Keyboard','LCD/Layar','SSD/HDD','RAM','Baterai','Motherboard','Kipas/Pendingin','Charger/Adaptor','Engsel/Casing','Software/OS','Lainnya'];
 let cache=[];
 let fileBefore=null,fileAfter=null;
 let curBeforeUrl='',curBeforeType='',curAfterUrl='',curAfterType='';
+let chDay=null,chLevel=null,chComp=null;
+
+if(window.Chart){Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='rgba(148,163,184,.15)';}
 
 function fmt(ts){return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';}
 function mediaHtml(url,type){if(!url)return '';return (type||'').startsWith('video')?`<video src="${url}" controls></video>`:`<img src="${url}">`;}
+
+function buildCompChecks(){
+  document.getElementById('compChecks').innerHTML=COMPONENTS.map(c=>`<label class="chk"><input type="checkbox" value="${c}"> ${c}</label>`).join('');
+}
+function getSelectedComps(){return [...document.querySelectorAll('#compChecks input:checked')].map(c=>c.value);}
+function setComps(arr){const a=arr||[];document.querySelectorAll('#compChecks input').forEach(c=>{c.checked=a.includes(c.value);});}
 
 async function loadAll(){
   if(!db)return [];
@@ -219,6 +247,7 @@ function openForm(id){
     f_id.value=r.id;f_device.value=r.device;f_customer.value=r.customer||'';
     f_level.value=r.level;f_status.value=r.status;f_tasks.value=r.tasks||'';
     f_beforeNotes.value=r.before_notes||'';f_afterNotes.value=r.after_notes||'';
+    setComps(r.components||[]);
     curBeforeUrl=r.before_url||'';curBeforeType=r.before_type||'';
     curAfterUrl=r.after_url||'';curAfterType=r.after_type||'';
     if(curBeforeUrl)showPreview('prev_before',curBeforeUrl,(curBeforeType).startsWith('video'));
@@ -226,7 +255,7 @@ function openForm(id){
   }else{
     document.getElementById('formTitle').innerText='Tambah Laporan';
     ['f_id','f_device','f_customer','f_tasks','f_beforeNotes','f_afterNotes'].forEach(i=>document.getElementById(i).value='');
-    f_level.value='1';f_status.value='Proses';
+    f_level.value='1';f_status.value='Proses';setComps([]);
   }
 }
 function closeForm(){document.getElementById('formModal').classList.remove('open');}
@@ -241,7 +270,7 @@ async function saveReport(){
     if(fileBefore){const m=await uploadMedia(fileBefore);bUrl=m.url;bType=m.type;}
     if(fileAfter){const m=await uploadMedia(fileAfter);aUrl=m.url;aType=m.type;}
     const row={device,customer:f_customer.value.trim(),level:+f_level.value,status:f_status.value,
-      tasks:f_tasks.value.trim(),before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
+      tasks:f_tasks.value.trim(),components:getSelectedComps(),before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
       before_url:bUrl,before_type:bType,after_url:aUrl,after_type:aType,updated_at:new Date().toISOString()};
     const id=f_id.value;let res;
     if(id){res=await db.from('reports').update(row).eq('id',id);}
@@ -261,9 +290,11 @@ async function delReport(id){
 
 function openDetail(id){
   const r=cache.find(x=>x.id===id);const lv=LEVELS[r.level];
+  const comps=(r.components||[]).map(c=>`<span class="chip">${c}</span>`).join('')||'<span class="muted">-</span>';
   document.getElementById('detailContent').innerHTML=`
     <div class="row"><h2>${r.device}</h2><span class="badge" style="background:${lv.color}">${lv.name}</span></div>
     <p class="muted">${r.customer?('Customer: '+r.customer+' • '):''}Status: ${r.status} • Update: ${fmt(r.updated_at)}</p>
+    <label>Komponen</label><div>${comps}</div>
     <label>Pekerjaan</label><p>${r.tasks||'-'}</p>
     <h3 style="margin-top:16px">Perbandingan Before / After</h3>
     <div class="ba">
@@ -279,10 +310,11 @@ function openDetail(id){
 }
 function closeDetail(){document.getElementById('detailModal').classList.remove('open');}
 
-function card(r){const lv=LEVELS[r.level];
+function card(r){const lv=LEVELS[r.level];const comps=(r.components||[]).slice(0,3).join(', ');
   return `<div class="card">
     <div class="row"><h3>${r.device}</h3><span class="badge" style="background:${lv.color}">Lv ${r.level}</span></div>
     <div class="muted">${r.customer||'Tanpa nama customer'}</div>
+    ${comps?`<div class="muted">🔎 ${comps}</div>`:''}
     <div class="row"><span class="pill ${r.status==='Selesai'?'selesai':'proses'}">${r.status}</span>
       <span class="muted">${fmt(r.updated_at)}</span></div>
     <div class="actions">
@@ -290,6 +322,46 @@ function card(r){const lv=LEVELS[r.level];
       <button class="btn secondary small" onclick="openForm('${r.id}')">Edit</button>
       <button class="btn danger small" onclick="delReport('${r.id}')">Hapus</button>
     </div></div>`;
+}
+
+function renderCharts(data){
+  if(!window.Chart)return;
+  // 1) Pengerjaan 14 hari terakhir (by created_at)
+  const days=[],counts=[];
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toISOString().slice(0,10);
+    days.push(d.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));
+    counts.push(data.filter(r=>(r.created_at||'').slice(0,10)===key).length);}
+  // 2) Distribusi level
+  const lvCounts=[1,2,3,4].map(l=>data.filter(x=>x.level===l).length);
+  // 3) Komponen tersering
+  const compMap={};data.forEach(r=>(r.components||[]).forEach(c=>{compMap[c]=(compMap[c]||0)+1;}));
+  const compLabels=Object.keys(compMap).sort((a,b)=>compMap[b]-compMap[a]);
+  const compVals=compLabels.map(c=>compMap[c]);
+  if(chDay)chDay.destroy();
+  chDay=new Chart(document.getElementById('chartDay'),{type:'bar',
+    data:{labels:days,datasets:[{label:'Pengerjaan',data:counts,backgroundColor:'#6366f1',borderRadius:4}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+  if(chLevel)chLevel.destroy();
+  chLevel=new Chart(document.getElementById('chartLevel'),{type:'doughnut',
+    data:{labels:['Level 1','Level 2','Level 3','Level 4'],datasets:[{data:lvCounts,backgroundColor:['#22c55e','#3b82f6','#f59e0b','#ef4444']}]},
+    options:{plugins:{legend:{position:'bottom'}}}});
+  if(chComp)chComp.destroy();
+  chComp=new Chart(document.getElementById('chartComp'),{type:'bar',
+    data:{labels:compLabels.length?compLabels:['Belum ada data'],datasets:[{label:'Jumlah',data:compVals.length?compVals:[0],backgroundColor:'#38bdf8',borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+}
+
+function renderInsight(data){
+  const el=document.getElementById('insight');
+  if(!data.length){el.innerHTML='💡 <b>Insight:</b> belum ada data. Tambahkan laporan pertama Anda.';return;}
+  const lvCounts=[1,2,3,4].map(l=>data.filter(x=>x.level===l).length);
+  const topLv=lvCounts.indexOf(Math.max(...lvCounts))+1;
+  const compMap={};data.forEach(r=>(r.components||[]).forEach(c=>compMap[c]=(compMap[c]||0)+1));
+  const sortedComp=Object.keys(compMap).sort((a,b)=>compMap[b]-compMap[a]);
+  const topComp=sortedComp[0]?`${sortedComp[0]} (${compMap[sortedComp[0]]}x)`:'-';
+  const today=new Date().toISOString().slice(0,10);
+  const todayCount=data.filter(r=>(r.created_at||'').slice(0,10)===today).length;
+  el.innerHTML=`💡 <b>Insight:</b> Pengerjaan hari ini <b>${todayCount}</b> unit • Paling banyak <b>Level ${topLv}</b> (${lvCounts[topLv-1]}x) • Komponen tersering: <b>${topComp}</b>.`;
 }
 
 function render(){
@@ -304,6 +376,8 @@ function render(){
     <div class="stat"><div class="num" style="color:#3b82f6">${perLv[1]}</div><div class="lbl">Level 2</div></div>
     <div class="stat"><div class="num" style="color:#f59e0b">${perLv[2]}</div><div class="lbl">Level 3</div></div>
     <div class="stat"><div class="num" style="color:#ef4444">${perLv[3]}</div><div class="lbl">Level 4</div></div>`;
+  renderInsight(data);
+  renderCharts(data);
   const recent=data.slice(0,6);
   document.getElementById('recentGrid').innerHTML=recent.length?recent.map(card).join(''):'<div class="empty">Belum ada laporan. Klik + Tambah untuk mulai.</div>';
   const q=(document.getElementById('search').value||'').toLowerCase();
@@ -313,6 +387,7 @@ function render(){
   document.getElementById('listGrid').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="empty">Tidak ada laporan yang cocok.</div>';
 }
 
+buildCompChecks();
 if(db){refresh();}else{render();}
 </script>
 </body>

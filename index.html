@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FixTrack — Portofolio Teknisi Laptop</title>
+<style>
+  :root{--bg:#0f172a;--card:#1e293b;--card2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#6366f1;--border:#334155;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{background:var(--bg);color:var(--text);min-height:100vh;}
+  header{background:var(--card);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+  header h1{font-size:20px;display:flex;gap:10px;align-items:center;}
+  header small{color:var(--muted);font-weight:400;font-size:12px;display:block;}
+  nav{display:flex;gap:8px;}
+  nav button{background:transparent;color:var(--muted);border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;}
+  nav button.active{background:var(--accent);color:#fff;}
+  .container{max-width:1100px;margin:0 auto;padding:24px;}
+  .btn{background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;}
+  .btn:disabled{opacity:.6;cursor:not-allowed;}
+  .btn.secondary{background:var(--card2);}
+  .btn.danger{background:#dc2626;}
+  .btn.small{padding:6px 12px;font-size:13px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:28px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;}
+  .stat .num{font-size:30px;font-weight:800;}
+  .stat .lbl{color:var(--muted);font-size:13px;margin-top:4px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+  .card h3{font-size:16px;}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;}
+  .pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+  .pill.proses{background:#78350f;color:#fcd34d;}
+  .pill.selesai{background:#064e3b;color:#6ee7b7;}
+  .muted{color:var(--muted);font-size:13px;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
+  input,select,textarea{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;width:100%;}
+  textarea{min-height:80px;resize:vertical;}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600;}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:30px;z-index:100;overflow:auto;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:680px;width:100%;}
+  .modal h2{margin-bottom:8px;}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;}
+  .ba .box{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .ba img,.ba video{width:100%;border-radius:8px;margin-top:8px;max-height:240px;object-fit:cover;background:#000;}
+  .ba h4{margin-bottom:6px;font-size:14px;}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px;}
+  .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .warn{background:#7f1d1d;color:#fecaca;padding:14px 18px;border-radius:10px;margin:16px 24px;display:none;}
+  @media(max-width:600px){.ba{grid-template-columns:1fr;}nav button{padding:8px 10px;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛠️ FixTrack <small>Portofolio Teknisi Laptop</small></h1>
+  <nav>
+    <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
+    <button id="navList" onclick="showTab('list')">Laporan</button>
+    <button class="btn small" onclick="openForm()">+ Tambah</button>
+  </nav>
+</header>
+
+<div class="warn" id="configWarn">⚠️ Supabase belum dikonfigurasi. Isi <b>SUPABASE_URL</b> dan <b>SUPABASE_ANON_KEY</b> di dalam kode.</div>
+
+<div class="container">
+  <!-- DASHBOARD -->
+  <div id="tab-dash">
+    <div class="stat-grid" id="statGrid"></div>
+    <h2 style="margin-bottom:14px">📌 Pekerjaan Terbaru</h2>
+    <div class="grid" id="recentGrid"></div>
+  </div>
+
+  <!-- LIST -->
+  <div id="tab-list" style="display:none">
+    <div class="toolbar">
+      <input id="search" placeholder="Cari device / customer..." oninput="render()" style="max-width:240px" />
+      <select id="filterLevel" onchange="render()" style="max-width:160px">
+        <option value="">Semua Level</option>
+        <option value="1">Level 1</option><option value="2">Level 2</option>
+        <option value="3">Level 3</option><option value="4">Level 4</option>
+      </select>
+      <select id="filterStatus" onchange="render()" style="max-width:160px">
+        <option value="">Semua Status</option>
+        <option value="Proses">Proses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+      <button class="btn" onclick="openForm()">+ Tambah Laporan</button>
+    </div>
+    <div class="grid" id="listGrid"></div>
+  </div>
+</div>
+
+<!-- MODAL FORM -->
+<div class="modal-bg" id="formModal">
+  <div class="modal">
+    <h2 id="formTitle">Tambah Laporan</h2>
+    <input type="hidden" id="f_id" />
+    <label>Nama Device / Laptop *</label>
+    <input id="f_device" placeholder="cth: Asus X441 / Acer Aspire 5" />
+    <label>Customer</label>
+    <input id="f_customer" placeholder="Nama pemilik (opsional)" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label>Level Pekerjaan</label>
+        <select id="f_level">
+          <option value="1">Level 1 - Ringan (repasta, cleaning)</option>
+          <option value="2">Level 2 - Sedang (ganti thermal, OS, RAM/SSD)</option>
+          <option value="3">Level 3 - Berat (keyboard, baterai, LCD)</option>
+          <option value="4">Level 4 - Sangat Berat (motherboard, BGA)</option>
+        </select></div>
+      <div><label>Status</label>
+        <select id="f_status"><option>Proses</option><option>Selesai</option></select></div>
+    </div>
+    <label>Pekerjaan yang dilakukan</label>
+    <textarea id="f_tasks" placeholder="cth: bongkar, bersihkan kipas, ganti thermal paste, pasang kembali..."></textarea>
+
+    <div class="ba">
+      <div class="box">
+        <h4>🔧 BEFORE (sebelum perbaikan)</h4>
+        <label>Catatan kondisi awal</label>
+        <textarea id="f_beforeNotes" placeholder="cth: panas berlebih, kipas berisik..."></textarea>
+        <label>Foto / Video Before</label>
+        <input type="file" accept="image/*,video/*" onchange="pickFile(this,'before')" />
+        <div id="prev_before" style="display:none"></div>
+      </div>
+      <div class="box">
+        <h4>✅ AFTER (sesudah perbaikan)</h4>
+        <label>Catatan hasil</label>
+        <textarea id="f_afterNotes" placeholder="cth: suhu normal, kipas senyap..."></textarea>
+        <label>Foto / Video After</label>
+        <input type="file" accept="image/*,video/*" onchange="pickFile(this,'after')" />
+        <div id="prev_after" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn secondary" onclick="closeForm()">Batal</button>
+      <button class="btn" id="saveBtn" onclick="saveReport()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETAIL -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal" id="detailContent"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ====== KONFIGURASI SUPABASE (WAJIB DIISI) ======
+const SUPABASE_URL = 'https://yahxcwqfuackrbyubppc.supabase.co';      // cth: https://abcd.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHhjd3FmdWFja3JieXVicHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzQyMTgsImV4cCI6MjA5ODI1MDIxOH0.pBZt06Ww2U29xsI4ZvADZUrAHP9KbnqzbqjqAgosNAc';    // anon public key
+// =================================================
+
+let db=null;
+if(SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length>20){
+  db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+}else{
+  document.getElementById('configWarn').style.display='block';
+}
+
+const LEVELS={
+  1:{name:'Level 1 - Ringan',color:'#22c55e'},
+  2:{name:'Level 2 - Sedang',color:'#3b82f6'},
+  3:{name:'Level 3 - Berat',color:'#f59e0b'},
+  4:{name:'Level 4 - Sangat Berat',color:'#ef4444'}
+};
+let cache=[];
+let fileBefore=null,fileAfter=null;
+let curBeforeUrl='',curBeforeType='',curAfterUrl='',curAfterType='';
+
+function fmt(ts){return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';}
+function mediaHtml(url,type){if(!url)return '';return (type||'').startsWith('video')?`<video src="${url}" controls></video>`:`<img src="${url}">`;}
+
+async function loadAll(){
+  if(!db)return [];
+  const {data,error}=await db.from('reports').select('*').order('updated_at',{ascending:false});
+  if(error){alert('Gagal memuat data: '+error.message);return [];}
+  cache=data||[];return cache;
+}
+async function refresh(){await loadAll();render();}
+
+function showTab(t){
+  document.getElementById('tab-dash').style.display=t==='dash'?'block':'none';
+  document.getElementById('tab-list').style.display=t==='list'?'block':'none';
+  document.getElementById('navDash').classList.toggle('active',t==='dash');
+  document.getElementById('navList').classList.toggle('active',t==='list');
+  render();
+}
+
+function pickFile(input,which){
+  const f=input.files[0];if(!f)return;
+  const url=URL.createObjectURL(f);const isVid=f.type.startsWith('video');
+  if(which==='before'){fileBefore=f;showPreview('prev_before',url,isVid);}
+  else{fileAfter=f;showPreview('prev_after',url,isVid);}
+}
+function showPreview(id,url,isVid){
+  const el=document.getElementById(id);
+  el.innerHTML=isVid?`<video src="${url}" controls></video>`:`<img src="${url}">`;
+  el.style.display='block';
+}
+
+async function uploadMedia(file){
+  const ext=(file.name.split('.').pop()||'bin').toLowerCase();
+  const path=Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
+  const {error}=await db.storage.from('media').upload(path,file,{upsert:false,contentType:file.type});
+  if(error)throw error;
+  const {data}=db.storage.from('media').getPublicUrl(path);
+  return {url:data.publicUrl,type:file.type};
+}
+
+function openForm(id){
+  document.getElementById('formModal').classList.add('open');
+  fileBefore=null;fileAfter=null;curBeforeUrl='';curBeforeType='';curAfterUrl='';curAfterType='';
+  ['prev_before','prev_after'].forEach(i=>{const e=document.getElementById(i);e.style.display='none';e.innerHTML='';});
+  if(id){
+    const r=cache.find(x=>x.id===id);
+    document.getElementById('formTitle').innerText='Edit Laporan';
+    f_id.value=r.id;f_device.value=r.device;f_customer.value=r.customer||'';
+    f_level.value=r.level;f_status.value=r.status;f_tasks.value=r.tasks||'';
+    f_beforeNotes.value=r.before_notes||'';f_afterNotes.value=r.after_notes||'';
+    curBeforeUrl=r.before_url||'';curBeforeType=r.before_type||'';
+    curAfterUrl=r.after_url||'';curAfterType=r.after_type||'';
+    if(curBeforeUrl)showPreview('prev_before',curBeforeUrl,(curBeforeType).startsWith('video'));
+    if(curAfterUrl)showPreview('prev_after',curAfterUrl,(curAfterType).startsWith('video'));
+  }else{
+    document.getElementById('formTitle').innerText='Tambah Laporan';
+    ['f_id','f_device','f_customer','f_tasks','f_beforeNotes','f_afterNotes'].forEach(i=>document.getElementById(i).value='');
+    f_level.value='1';f_status.value='Proses';
+  }
+}
+function closeForm(){document.getElementById('formModal').classList.remove('open');}
+
+async function saveReport(){
+  if(!db){alert('Supabase belum dikonfigurasi.');return;}
+  const device=f_device.value.trim();
+  if(!device){alert('Nama device wajib diisi');return;}
+  const btn=document.getElementById('saveBtn');btn.disabled=true;btn.innerText='Menyimpan...';
+  try{
+    let bUrl=curBeforeUrl,bType=curBeforeType,aUrl=curAfterUrl,aType=curAfterType;
+    if(fileBefore){const m=await uploadMedia(fileBefore);bUrl=m.url;bType=m.type;}
+    if(fileAfter){const m=await uploadMedia(fileAfter);aUrl=m.url;aType=m.type;}
+    const row={device,customer:f_customer.value.trim(),level:+f_level.value,status:f_status.value,
+      tasks:f_tasks.value.trim(),before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
+      before_url:bUrl,before_type:bType,after_url:aUrl,after_type:aType,updated_at:new Date().toISOString()};
+    const id=f_id.value;let res;
+    if(id){res=await db.from('reports').update(row).eq('id',id);}
+    else{res=await db.from('reports').insert(row);}
+    if(res.error)throw res.error;
+    closeForm();await refresh();
+  }catch(e){alert('Gagal menyimpan: '+e.message);}
+  finally{btn.disabled=false;btn.innerText='Simpan';}
+}
+
+async function delReport(id){
+  if(!confirm('Hapus laporan ini?'))return;
+  const {error}=await db.from('reports').delete().eq('id',id);
+  if(error){alert('Gagal menghapus: '+error.message);return;}
+  await refresh();
+}
+
+function openDetail(id){
+  const r=cache.find(x=>x.id===id);const lv=LEVELS[r.level];
+  document.getElementById('detailContent').innerHTML=`
+    <div class="row"><h2>${r.device}</h2><span class="badge" style="background:${lv.color}">${lv.name}</span></div>
+    <p class="muted">${r.customer?('Customer: '+r.customer+' • '):''}Status: ${r.status} • Update: ${fmt(r.updated_at)}</p>
+    <label>Pekerjaan</label><p>${r.tasks||'-'}</p>
+    <h3 style="margin-top:16px">Perbandingan Before / After</h3>
+    <div class="ba">
+      <div class="box"><h4>🔧 BEFORE</h4><p class="muted">${r.before_notes||'Belum diisi'}</p>${mediaHtml(r.before_url,r.before_type)}</div>
+      <div class="box"><h4>✅ AFTER</h4><p class="muted">${r.after_notes||'Belum diisi'}</p>${mediaHtml(r.after_url,r.after_type)}</div>
+    </div>
+    <div class="actions" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn danger small" onclick="delReport('${r.id}');closeDetail()">Hapus</button>
+      <button class="btn secondary small" onclick="closeDetail();openForm('${r.id}')">Edit</button>
+      <button class="btn small" onclick="closeDetail()">Tutup</button>
+    </div>`;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetail(){document.getElementById('detailModal').classList.remove('open');}
+
+function card(r){const lv=LEVELS[r.level];
+  return `<div class="card">
+    <div class="row"><h3>${r.device}</h3><span class="badge" style="background:${lv.color}">Lv ${r.level}</span></div>
+    <div class="muted">${r.customer||'Tanpa nama customer'}</div>
+    <div class="row"><span class="pill ${r.status==='Selesai'?'selesai':'proses'}">${r.status}</span>
+      <span class="muted">${fmt(r.updated_at)}</span></div>
+    <div class="actions">
+      <button class="btn small" onclick="openDetail('${r.id}')">Detail</button>
+      <button class="btn secondary small" onclick="openForm('${r.id}')">Edit</button>
+      <button class="btn danger small" onclick="delReport('${r.id}')">Hapus</button>
+    </div></div>`;
+}
+
+function render(){
+  const data=[...cache].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+  const total=data.length,selesai=data.filter(x=>x.status==='Selesai').length,proses=total-selesai;
+  const perLv=[1,2,3,4].map(l=>data.filter(x=>x.level===l).length);
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat"><div class="num">${total}</div><div class="lbl">Total Pekerjaan</div></div>
+    <div class="stat"><div class="num" style="color:#6ee7b7">${selesai}</div><div class="lbl">Selesai</div></div>
+    <div class="stat"><div class="num" style="color:#fcd34d">${proses}</div><div class="lbl">Proses</div></div>
+    <div class="stat"><div class="num" style="color:#22c55e">${perLv[0]}</div><div class="lbl">Level 1</div></div>
+    <div class="stat"><div class="num" style="color:#3b82f6">${perLv[1]}</div><div class="lbl">Level 2</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">${perLv[2]}</div><div class="lbl">Level 3</div></div>
+    <div class="stat"><div class="num" style="color:#ef4444">${perLv[3]}</div><div class="lbl">Level 4</div></div>`;
+  const recent=data.slice(0,6);
+  document.getElementById('recentGrid').innerHTML=recent.length?recent.map(card).join(''):'<div class="empty">Belum ada laporan. Klik + Tambah untuk mulai.</div>';
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const fl=document.getElementById('filterLevel').value;
+  const fs=document.getElementById('filterStatus').value;
+  const filtered=data.filter(r=>(r.device+' '+(r.customer||'')).toLowerCase().includes(q)&&(!fl||r.level==+fl)&&(!fs||r.status===fs));
+  document.getElementById('listGrid').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="empty">Tidak ada laporan yang cocok.</div>';
+}
+
+if(db){refresh();}else{render();}
+</script>
+</body>
+</html>

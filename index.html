@@ -8,9 +8,9 @@
   :root{--bg:#0f172a;--card:#1e293b;--card2:#273449;--text:#e2e8f0;--muted:#94a3b8;--accent:#6366f1;--border:#334155;}
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
   body{background:var(--bg);color:var(--text);min-height:100vh;}
-  header{background:var(--card);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
-  header h1{font-size:20px;display:flex;gap:10px;align-items:center;}
-  header small{color:var(--muted);font-weight:400;font-size:12px;display:block;}
+  header{background:var(--card);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+  header h1{font-size:20px;display:flex;gap:4px 10px;align-items:center;flex-wrap:wrap;}
+  header small{color:var(--muted);font-weight:400;font-size:12px;flex-basis:100%;}
   nav{display:flex;gap:8px;}
   nav button{background:transparent;color:var(--muted);border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;}
   nav button.active{background:var(--accent);color:#fff;}
@@ -57,7 +57,19 @@
   .empty{text-align:center;color:var(--muted);padding:60px 20px;}
   .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
   .warn{background:#7f1d1d;color:#fecaca;padding:14px 18px;border-radius:10px;margin:16px 24px;display:none;}
-  @media(max-width:600px){.ba,.charts{grid-template-columns:1fr;}nav button{padding:8px 10px;}}
+  @media(max-width:600px){
+    .container{padding:16px;}
+    header{flex-direction:column;align-items:stretch;gap:12px;}
+    header h1{font-size:18px;justify-content:center;}
+    header small{flex-basis:auto;}
+    nav{width:100%;flex-wrap:wrap;gap:8px;}
+    nav button{flex:1 1 auto;padding:10px 8px;text-align:center;}
+    .ba,.charts{grid-template-columns:1fr;}
+    .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+    .stat{padding:14px;}
+    .stat .num{font-size:24px;}
+    .modal{padding:18px;}
+  }
 </style>
 </head>
 <body>

@@ -116,7 +116,7 @@
 </head>
 <body>
 <header>
-  <h1>🛠️ Repair Log <small>Portofolio Teknisi Laptop</small></h1>
+  <h1>🛠️ RepairLog <small>Portofolio Teknisi Laptop</small></h1>
   <nav>
     <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
     <button id="navList" onclick="showTab('list')">Laporan</button>
@@ -467,11 +467,11 @@ async function saveReport(){
       level:+f_level.value,status:f_status.value,tasks:f_tasks.value.trim(),components:getSelectedComps(),
       before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
       before_media:beforeMedia,after_media:afterMedia,
-      date_in:dateIn,date_out:f_dateout.value||null,warranty_days:+f_warranty.value||0,
+      date_out:f_dateout.value||null,warranty_days:+f_warranty.value||0,
       updated_at:new Date().toISOString()};
     const id=f_id.value;let res;
     if(id){res=await db.from('reports').update(row).eq('id',id);}
-    else{row.ticket_no=genTicket(jobType,dateIn);res=await db.from('reports').insert(row);}
+    else{row.date_in=dateIn;row.ticket_no=genTicket(jobType,dateIn);res=await db.from('reports').insert(row);}
     if(res.error)throw res.error;
     closeForm();await refresh();
   }catch(e){alert('Gagal menyimpan: '+e.message);}
@@ -663,7 +663,7 @@ async function renderPublic(id){
   const before=photosOnly(getMedia(r,'before'),3);
   const after=photosOnly(getMedia(r,'after'),3);
   const comps=(r.components||[]).map(c=>`<span class="chip">${c}</span>`).join('')||'-';
-  pv.innerHTML=`<div class="pub-card"><br>    <h1 style="display:flex;gap:8px;align-items:center">🛠️ FixTrack</h1><br>    <p class="muted">Kartu Servis & Garansi</p><br>    <h2 style="margin-top:12px">${r.brand?r.brand+' ':''}${r.device}</h2><br>    <p class="muted">${r.ticket_no?('🎫 '+r.ticket_no+' • '):''}Customer: ${r.customer||'-'} • Status: ${r.status}</p><br>    ${wBox}<br>    <label>Komponen yang diperbaiki</label><div>${comps}</div><br>    <label>Detail pekerjaan</label><p>${r.tasks||'-'}</p><br>    <p class="muted">Tgl masuk: ${fmtDate(r.date_in)} • Tgl ambil: ${fmtDate(r.date_out)}</p><br>    <div class="ba"><br>      <div class="box"><h4>🔧 BEFORE</h4><div class="photo-grid">${before.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><br>      <div class="box"><h4>✅ AFTER</h4><div class="photo-grid">${after.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><br>    </div><br>  </div>`;
+  pv.innerHTML=`<div class="pub-card"><h1 style="display:flex;gap:8px;align-items:center">🛠️ RepairLog</h1><p class="muted">Kartu Servis & Garansi</p><h2 style="margin-top:12px">${r.brand?r.brand+' ':''}${r.device}</h2><p class="muted">${r.ticket_no?('🎫 '+r.ticket_no+' • '):''}Customer: ${r.customer||'-'} • Status: ${r.status}</p>${wBox}<label>Komponen yang diperbaiki</label><div>${comps}</div><label>Detail pekerjaan</label><p>${r.tasks||'-'}</p><p class="muted">Tgl masuk: ${fmtDate(r.date_in)} • Tgl ambil: ${fmtDate(r.date_out)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px"><div class="box"><h4>🔧 BEFORE</h4><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><div class="box"><h4>✅ AFTER</h4><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div></div></div>`;
 }
 function handleRoute(){
   const m=location.hash.match(/^#\/g\/(.+)$/);
@@ -682,7 +682,7 @@ function doPrint(id){
   const wTxt=!r.warranty_days?'Tanpa garansi':(w?(w.active?('Aktif, sisa '+w.daysLeft+' hari (s/d '+warrantyEndStr(r)+')'):('Habis ('+warrantyEndStr(r)+')')):'Mulai setelah pengambilan');
   const comps=(r.components||[]).join(', ')||'-';
   const money=r.job_type==='Sampingan'?('<tr><td>Biaya</td><td>'+rupiah(r.fee)+'</td><td>Pembayaran</td><td>'+(r.payment_status||'-')+'</td></tr>'):'';
-  document.getElementById('printArea').innerHTML=`<br>    <h1>🛠️ FixTrack — Laporan Servis</h1><br>    <div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span><span>Jenis: ${r.job_type||'-'}</span></div><br>    <table class="print-tbl"><br>      <tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><br>      <tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><br>      <tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><br>      <tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><br>      <tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><br>      <tr><td>Komponen</td><td colspan="3">${comps}</td></tr><br>      ${money}<br>    </table><br>    <h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><br>    <div class="print-ba"><br>      <div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><br>      <div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><br>    </div><br>    <p class="print-foot">Dicetak dari FixTrack • ${fmtDate(todayStr())}</p>`;
+  document.getElementById('printArea').innerHTML=`<h1>🛠️ RepairLog — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span><span>Jenis: ${r.job_type||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari RepairLog • ${fmtDate(todayStr())}</p>`;
   window.print();
 }
 buildCompChecks();

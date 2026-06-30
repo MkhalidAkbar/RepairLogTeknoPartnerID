@@ -38,11 +38,17 @@
   .pill.proses{background:#78350f;color:#fcd34d;}
   .pill.selesai{background:#064e3b;color:#6ee7b7;}
   .pill.batal{background:#7f1d1d;color:#fecaca;}
+  .pill.lunas{background:#064e3b;color:#6ee7b7;}
+  .pill.dp{background:#1e3a8a;color:#bfdbfe;}
+  .pill.belum{background:#78350f;color:#fcd34d;}
   .chip{display:inline-block;background:var(--card2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-size:11px;margin:2px 2px 0 0;}
   .muted{color:var(--muted);font-size:13px;}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
   input,select,textarea{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;width:100%;}
   textarea{min-height:80px;resize:vertical;}
+  input:disabled{opacity:.7;cursor:not-allowed;}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
   label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600;}
   .checks{display:flex;flex-wrap:wrap;gap:8px;}
   .chk{display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);padding:6px 10px;border-radius:8px;font-size:13px;width:auto;cursor:pointer;}
@@ -71,6 +77,28 @@
   .empty{text-align:center;color:var(--muted);padding:60px 20px;}
   .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
   .warn{background:#7f1d1d;color:#fecaca;padding:14px 18px;border-radius:10px;margin:16px 24px;display:none;}
+  .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+  .photo-grid img{width:100%;border-radius:6px;border:1px solid var(--border);}
+  #publicView{display:none;max-width:760px;margin:0 auto;padding:24px;}
+  .pub-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;}
+  .pub-warranty{font-size:15px;padding:14px;border-radius:12px;text-align:center;margin:14px 0;line-height:1.5;}
+  .pub-warranty.ok{background:#064e3b;color:#6ee7b7;}
+  .pub-warranty.no{background:#7f1d1d;color:#fecaca;}
+  #printArea{display:none;}
+  @media print{
+    body{background:#fff;}
+    header,.container,.modal-bg,.lb,#publicView{display:none !important;}
+    #printArea{display:block !important;color:#000;padding:10px;}
+    #printArea h1{font-size:18px;margin-bottom:8px;}
+    .print-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px;border-bottom:1px solid #000;padding-bottom:6px;}
+    .print-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
+    .print-tbl td{border:1px solid #999;padding:5px 8px;}
+    .print-tbl td:nth-child(odd){background:#f0f0f0;font-weight:600;width:95px;}
+    .print-ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+    .print-ba h4{font-size:13px;margin-bottom:4px;}
+    .photo-grid img{border:1px solid #bbb;}
+    .print-foot{margin-top:14px;font-size:10px;color:#666;text-align:center;}
+  }
   @media(max-width:600px){
     .container{padding:16px;}
     header{flex-direction:column;align-items:stretch;gap:12px;}
@@ -78,7 +106,7 @@
     header small{flex-basis:auto;}
     nav{width:100%;flex-wrap:wrap;gap:8px;}
     nav button{flex:1 1 auto;padding:10px 8px;text-align:center;}
-    .ba,.charts{grid-template-columns:1fr;}
+    .ba,.charts,.frow,.frow3{grid-template-columns:1fr;}
     .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
     .stat{padding:14px;}
     .stat .num{font-size:24px;}
@@ -106,7 +134,8 @@
     <div class="charts">
       <div class="chartbox"><h3>📊 Pengerjaan 14 Hari Terakhir</h3><canvas id="chartDay"></canvas></div>
       <div class="chartbox"><h3>🍩 Distribusi per Level</h3><canvas id="chartLevel"></canvas></div>
-      <div class="chartbox" style="grid-column:1/-1"><h3>📈 Komponen Paling Sering Diperbaiki</h3><canvas id="chartComp"></canvas></div>
+      <div class="chartbox"><h3>📈 Komponen Paling Sering</h3><canvas id="chartComp"></canvas></div>
+      <div class="chartbox"><h3>💻 Merek Paling Sering</h3><canvas id="chartBrand"></canvas></div>
     </div>
     <h2 style="margin-bottom:14px">📌 Pekerjaan Terbaru</h2>
     <div class="grid" id="recentGrid"></div>
@@ -115,7 +144,7 @@
   <!-- LIST -->
   <div id="tab-list" style="display:none">
     <div class="toolbar">
-      <input id="search" placeholder="Cari device / customer..." oninput="render()" style="max-width:240px" />
+      <input id="search" placeholder="Cari device / customer / tiket..." oninput="render()" style="max-width:240px" />
       <select id="filterLevel" onchange="render()" style="max-width:160px">
         <option value="">Semua Level</option>
         <option value="1">Level 1</option><option value="2">Level 2</option>
@@ -126,6 +155,11 @@
         <option value="Proses">Proses</option>
         <option value="Selesai">Selesai</option>
         <option value="Batal">Batal / Gagal</option>
+      </select>
+      <select id="filterJob" onchange="render()" style="max-width:160px">
+        <option value="">Semua Jenis</option>
+        <option value="Sampingan">Sampingan</option>
+        <option value="Perusahaan">Perusahaan</option>
       </select>
       <button class="btn" onclick="openForm()">+ Tambah Laporan</button>
     </div>
@@ -140,9 +174,21 @@
     <input type="hidden" id="f_id" />
     <label>Nama Device / Laptop *</label>
     <input id="f_device" placeholder="cth: Asus X441 / Acer Aspire 5" />
-    <label>Customer</label>
-    <input id="f_customer" placeholder="Nama pemilik (opsional)" />
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="frow">
+      <div><label>Merek</label><select id="f_brand"></select></div>
+      <div><label>Customer</label><input id="f_customer" placeholder="Nama pemilik" /></div>
+    </div>
+    <div class="frow">
+      <div><label>No. WhatsApp Customer</label><input id="f_phone" placeholder="cth: 0812xxxx" /></div>
+      <div><label>Jenis Pekerjaan</label>
+        <select id="f_jobtype" onchange="toggleJobType()"><option>Sampingan</option><option>Perusahaan</option></select></div>
+    </div>
+    <div class="frow" id="feeWrap">
+      <div><label>Biaya Jasa (Rp)</label><input id="f_fee" type="number" min="0" placeholder="0" /></div>
+      <div><label>Status Pembayaran</label>
+        <select id="f_payment"><option>Belum</option><option>DP</option><option>Lunas</option></select></div>
+    </div>
+    <div class="frow">
       <div><label>Level Pekerjaan</label>
         <select id="f_level">
           <option value="1">Level 1 - Ringan (repasta, cleaning)</option>
@@ -153,6 +199,17 @@
       <div><label>Status</label>
         <select id="f_status"><option>Proses</option><option>Selesai</option><option value="Batal">Batal / Gagal</option></select></div>
     </div>
+    <div class="frow3">
+      <div><label>Tanggal Masuk (terkunci)</label><input id="f_datein" type="date" disabled /></div>
+      <div><label>Tanggal Pengambilan</label><input id="f_dateout" type="date" /></div>
+      <div><label>Lama Garansi</label>
+        <select id="f_warranty">
+          <option value="0">Tanpa garansi</option>
+          <option value="7">7 hari</option><option value="14">14 hari</option>
+          <option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option>
+        </select></div>
+    </div>
+    <div class="muted" id="ticketHint" style="font-size:12px;margin-top:8px">No. Tiket dibuat otomatis saat disimpan.</div>
     <label>Komponen / Bagian yang diperbaiki</label>
     <div class="checks" id="compChecks"></div>
     <label>Pekerjaan yang dilakukan</label>
@@ -179,9 +236,12 @@
       </div>
     </div>
 
-    <div class="actions" style="margin-top:18px;justify-content:flex-end">
-      <button class="btn secondary" onclick="closeForm()">Batal</button>
-      <button class="btn" id="saveBtn" onclick="saveReport()">Simpan</button>
+    <div class="actions" style="margin-top:18px">
+      <button class="btn danger" id="delBtn" onclick="delFromForm()" style="display:none">🗑️ Hapus</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn secondary" onclick="closeForm()">Batal</button>
+        <button class="btn" id="saveBtn" onclick="saveReport()">Simpan</button>
+      </div>
     </div>
   </div>
 </div>
@@ -191,6 +251,8 @@
   <div class="modal" id="detailContent"></div>
 </div>
 
+<div id="publicView"></div>
+
 <!-- LIGHTBOX PREVIEW -->
 <div class="lb" id="lightbox" onclick="if(event.target.id==='lightbox')closeLb()">
   <button class="lbbtn close" onclick="closeLb()">×</button>
@@ -199,6 +261,9 @@
   <button class="lbbtn nav next" onclick="lbNav(1)">›</button>
   <div class="count" id="lbCount"></div>
 </div>
+
+<!-- AREA CETAK -->
+<div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -222,6 +287,8 @@ const LEVELS={
   4:{name:'Level 4 - Sangat Berat',color:'#ef4444'}
 };
 const COMPONENTS=['Keyboard','LCD/Layar','SSD/HDD','RAM','Baterai','Motherboard','Kipas/Pendingin','Charger/Adaptor','Engsel/Casing','Software/OS','Lainnya'];
+const BRANDS=['Asus','Acer','Lenovo','HP','Dell','MSI','Apple/MacBook','Axioo','Toshiba','Samsung','Lainnya'];
+const MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 // ====== PENGATURAN KOMPRESI MEDIA ======
 const IMG_MAX_DIM=1600;   // sisi terpanjang foto (px); foto lebih besar diperkecil ke ukuran ini
 const IMG_QUALITY=0.7;    // kualitas JPEG 0.7 (=70%); ukuran file biasanya turun ~70-85%
@@ -230,11 +297,26 @@ let cache=[];
 let beforeList=[],afterList=[];      // item: {url?,type, file?, local?}
 let detailGalleries={before:[],after:[]};
 let lbItems=[],lbIndex=0;
-let chDay=null,chLevel=null,chComp=null;
+let chDay=null,chLevel=null,chComp=null,chBrand=null;
 
 if(window.Chart){Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='rgba(148,163,184,.15)';}
 
 function fmt(ts){return ts?new Date(ts).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDate(s){if(!s)return '-';const p=String(s).slice(0,10).split('-');if(p.length<3)return s;return (+p[2])+' '+MONTHS[(+p[1])-1]+' '+p[0];}
+function statusClass(s){return s==='Selesai'?'selesai':(s==='Batal'?'batal':'proses');}
+function payClass(p){return p==='Lunas'?'lunas':(p==='DP'?'dp':'belum');}
+function rupiah(n){return 'Rp '+(+n||0).toLocaleString('id-ID');}
+function photosOnly(arr,max){return arr.filter(m=>!(m.type||'').startsWith('video')).slice(0,max);}
+function warrantyInfo(r){
+  if(!r.warranty_days||!r.date_out)return null;
+  const p=String(r.date_out).slice(0,10).split('-').map(Number);
+  const end=new Date(p[0],p[1]-1,p[2]);end.setDate(end.getDate()+r.warranty_days);
+  const today=new Date();today.setHours(0,0,0,0);
+  const daysLeft=Math.round((end-today)/86400000);
+  return {end,daysLeft,active:daysLeft>=0};
+}
+function warrantyEndStr(r){const w=warrantyInfo(r);if(!w)return '';return w.end.getDate()+' '+MONTHS[w.end.getMonth()]+' '+w.end.getFullYear();}
 
 function getMedia(r,which){
   const arr=r[which+'_media'];
@@ -244,6 +326,20 @@ function getMedia(r,which){
 
 function buildCompChecks(){
   document.getElementById('compChecks').innerHTML=COMPONENTS.map(c=>`<label class="chk"><input type="checkbox" value="${c}"> ${c}</label>`).join('');
+}
+function buildBrandOptions(){
+  const el=document.getElementById('f_brand');
+  if(el.options.length)return;
+  el.innerHTML='<option value="">- Pilih merek -</option>'+BRANDS.map(b=>`<option>${b}</option>`).join('');
+}
+function toggleJobType(){
+  document.getElementById('feeWrap').style.display=(document.getElementById('f_jobtype').value==='Sampingan')?'grid':'none';
+}
+function genTicket(jobType,dateStr){
+  const prefix=jobType==='Perusahaan'?'RL':'TPID';
+  const p=dateStr.split('-');
+  const n=cache.filter(r=>r.job_type===jobType&&String(r.date_in).slice(0,10)===dateStr).length+1;
+  return prefix+'/'+p[0]+'/'+p[1]+'/'+p[2]+'/'+String(n).padStart(3,'0');
 }
 function getSelectedComps(){return [...document.querySelectorAll('#compChecks input:checked')].map(c=>c.value);}
 function setComps(arr){const a=arr||[];document.querySelectorAll('#compChecks input').forEach(c=>{c.checked=a.includes(c.value);});}
@@ -326,21 +422,33 @@ async function uploadList(list){
 
 function openForm(id){
   document.getElementById('formModal').classList.add('open');
-  beforeList=[];afterList=[];
+  beforeList=[];afterList=[];buildBrandOptions();
   if(id){
     const r=cache.find(x=>x.id===id);
     document.getElementById('formTitle').innerText='Edit Laporan';
     f_id.value=r.id;f_device.value=r.device;f_customer.value=r.customer||'';
+    f_brand.value=r.brand||'';f_phone.value=r.customer_phone||'';
+    f_jobtype.value=r.job_type||'Sampingan';
+    f_fee.value=r.fee||'';f_payment.value=r.payment_status||'Belum';
     f_level.value=r.level;f_status.value=r.status;f_tasks.value=r.tasks||'';
     f_beforeNotes.value=r.before_notes||'';f_afterNotes.value=r.after_notes||'';
+    f_datein.value=String(r.date_in||todayStr()).slice(0,10);
+    f_dateout.value=r.date_out?String(r.date_out).slice(0,10):'';
+    f_warranty.value=String(r.warranty_days||0);
     setComps(r.components||[]);
     beforeList=getMedia(r,'before');afterList=getMedia(r,'after');
+    document.getElementById('ticketHint').innerText=r.ticket_no?('No. Tiket: '+r.ticket_no):'No. Tiket dibuat otomatis saat disimpan.';
+    document.getElementById('delBtn').style.display='inline-block';
   }else{
     document.getElementById('formTitle').innerText='Tambah Laporan';
-    ['f_id','f_device','f_customer','f_tasks','f_beforeNotes','f_afterNotes'].forEach(i=>document.getElementById(i).value='');
-    f_level.value='1';f_status.value='Proses';setComps([]);
+    ['f_id','f_device','f_customer','f_tasks','f_beforeNotes','f_afterNotes','f_phone','f_fee','f_dateout'].forEach(i=>document.getElementById(i).value='');
+    f_brand.value='';f_jobtype.value='Sampingan';f_payment.value='Belum';
+    f_level.value='1';f_status.value='Proses';f_warranty.value='30';
+    f_datein.value=todayStr();setComps([]);
+    document.getElementById('ticketHint').innerText='No. Tiket dibuat otomatis saat disimpan.';
+    document.getElementById('delBtn').style.display='none';
   }
-  renderThumbs('before');renderThumbs('after');
+  toggleJobType();renderThumbs('before');renderThumbs('after');
 }
 function closeForm(){document.getElementById('formModal').classList.remove('open');}
 
@@ -352,23 +460,30 @@ async function saveReport(){
   try{
     const beforeMedia=await uploadList(beforeList);
     const afterMedia=await uploadList(afterList);
-    const row={device,customer:f_customer.value.trim(),level:+f_level.value,status:f_status.value,
-      tasks:f_tasks.value.trim(),components:getSelectedComps(),before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
-      before_media:beforeMedia,after_media:afterMedia,updated_at:new Date().toISOString()};
+    const jobType=f_jobtype.value;
+    const dateIn=f_datein.value||todayStr();
+    const row={device,brand:f_brand.value||null,customer:f_customer.value.trim(),customer_phone:f_phone.value.trim()||null,
+      job_type:jobType,fee:jobType==='Sampingan'?(+f_fee.value||0):0,payment_status:jobType==='Sampingan'?f_payment.value:null,
+      level:+f_level.value,status:f_status.value,tasks:f_tasks.value.trim(),components:getSelectedComps(),
+      before_notes:f_beforeNotes.value.trim(),after_notes:f_afterNotes.value.trim(),
+      before_media:beforeMedia,after_media:afterMedia,
+      date_in:dateIn,date_out:f_dateout.value||null,warranty_days:+f_warranty.value||0,
+      updated_at:new Date().toISOString()};
     const id=f_id.value;let res;
     if(id){res=await db.from('reports').update(row).eq('id',id);}
-    else{res=await db.from('reports').insert(row);}
+    else{row.ticket_no=genTicket(jobType,dateIn);res=await db.from('reports').insert(row);}
     if(res.error)throw res.error;
     closeForm();await refresh();
   }catch(e){alert('Gagal menyimpan: '+e.message);}
   finally{btn.disabled=false;btn.innerText='Simpan';}
 }
 
-async function delReport(id){
-  if(!confirm('Hapus laporan ini?'))return;
+async function delFromForm(){
+  const id=f_id.value;if(!id)return;
+  if(!confirm('Hapus laporan ini? Tindakan tidak bisa dibatalkan.'))return;
   const {error}=await db.from('reports').delete().eq('id',id);
   if(error){alert('Gagal menghapus: '+error.message);return;}
-  await refresh();
+  closeForm();await refresh();
 }
 
 // ---- detail + lightbox ----
@@ -386,9 +501,22 @@ function openDetail(id){
   const comps=(r.components||[]).map(c=>`<span class="chip">${c}</span>`).join('')||'<span class="muted">-</span>';
   const bThumbs=detailGalleries.before.map((m,i)=>thumbView('before',i,m)).join('')||'<span class="muted">Belum ada media</span>';
   const aThumbs=detailGalleries.after.map((m,i)=>thumbView('after',i,m)).join('')||'<span class="muted">Belum ada media</span>';
+  const w=warrantyInfo(r);
+  let wHtml;
+  if(!r.warranty_days)wHtml='Tanpa garansi';
+  else if(w&&w.active)wHtml=`<b style="color:#6ee7b7">sisa ${w.daysLeft} hari</b> (s/d ${warrantyEndStr(r)})`;
+  else if(w)wHtml=`<b style="color:#fca5a5">sudah habis</b> (${warrantyEndStr(r)})`;
+  else wHtml='akan aktif setelah tanggal pengambilan diisi';
+  const money=r.job_type==='Sampingan'?`<label>Biaya & Pembayaran</label><p>${rupiah(r.fee)} - <span class="pill ${payClass(r.payment_status)}">${r.payment_status||'-'}</span></p>`:'';
   document.getElementById('detailContent').innerHTML=`
-    <div class="row"><h2>${r.device}</h2><span class="badge" style="background:${lv.color}">${lv.name}</span></div>
-    <p class="muted">${r.customer?('Customer: '+r.customer+' • '):''}Status: ${r.status} • Update: ${fmt(r.updated_at)}</p>
+    <div class="row"><h2>${r.brand?r.brand+' ':''}${r.device}</h2><span class="badge" style="background:${lv.color}">${lv.name}</span></div>
+    <p class="muted">${r.ticket_no?('Tiket '+r.ticket_no+' - '):''}${r.job_type||'Sampingan'} - <span class="pill ${statusClass(r.status)}">${r.status}</span></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:10px" class="muted">
+      <div>Customer: ${r.customer||'-'}</div><div>WhatsApp: ${r.customer_phone||'-'}</div>
+      <div>Tgl Masuk: ${fmtDate(r.date_in)}</div><div>Tgl Ambil: ${fmtDate(r.date_out)}</div>
+    </div>
+    <label>Garansi</label><p>${wHtml}</p>
+    ${money}
     <label>Komponen</label><div>${comps}</div>
     <label>Pekerjaan</label><p>${r.tasks||'-'}</p>
     <h3 style="margin-top:16px">Perbandingan Before / After</h3>
@@ -398,8 +526,9 @@ function openDetail(id){
       <div class="box"><h4>✅ AFTER</h4><p class="muted">${r.after_notes||'Belum diisi'}</p><div class="thumbs">${aThumbs}</div></div>
     </div>
     <div class="actions" style="margin-top:18px;justify-content:flex-end">
-      <button class="btn danger small" onclick="delReport('${r.id}');closeDetail()">Hapus</button>
-      <button class="btn secondary small" onclick="closeDetail();openForm('${r.id}')">Edit</button>
+      ${r.status==='Selesai'?`<button class="btn secondary small" onclick="copyLink('${r.id}')">Link Garansi</button>`:''}
+      <button class="btn secondary small" onclick="doPrint('${r.id}')">Cetak / PDF</button>
+      <button class="btn small" onclick="closeDetail();openForm('${r.id}')">Edit</button>
       <button class="btn small" onclick="closeDetail()">Tutup</button>
     </div>`;
   document.getElementById('detailModal').classList.add('open');
@@ -426,16 +555,19 @@ document.addEventListener('keydown',e=>{
 
 function card(r){const lv=LEVELS[r.level];const comps=(r.components||[]).slice(0,3).join(', ');
   const nMedia=getMedia(r,'before').length+getMedia(r,'after').length;
+  const w=warrantyInfo(r);
+  const pay=(r.job_type==='Sampingan'&&r.payment_status)?`<span class="pill ${payClass(r.payment_status)}">${r.payment_status}</span>`:'';
+  const garansiTxt=r.warranty_days?(w?(w.active?('Garansi '+w.daysLeft+' hr'):'Garansi habis'):'Garansi -'):'';
   return `<div class="card">
-    <div class="row"><h3>${r.device}</h3><span class="badge" style="background:${lv.color}">Lv ${r.level}</span></div>
+    <div class="row"><h3>${r.brand?r.brand+' ':''}${r.device}</h3><span class="badge" style="background:${lv.color}">Lv ${r.level}</span></div>
+    ${r.ticket_no?`<div class="muted" style="font-size:11px">Tiket: ${r.ticket_no}</div>`:''}
     <div class="muted">${r.customer||'Tanpa nama customer'}</div>
     ${comps?`<div class="muted">🔎 ${comps}</div>`:''}
-    <div class="row"><span class="pill ${r.status==='Selesai'?'selesai':(r.status==='Batal'?'batal':'proses')}">${r.status}</span>
+    <div class="row"><span class="pill ${statusClass(r.status)}">${r.status}</span>${pay}<span class="muted" style="font-size:11px">${garansiTxt}</span>
       <span class="muted">${nMedia?('📷 '+nMedia+' • '):''}${fmt(r.updated_at)}</span></div>
     <div class="actions">
       <button class="btn small" onclick="openDetail('${r.id}')">Detail</button>
       <button class="btn secondary small" onclick="openForm('${r.id}')">Edit</button>
-      <button class="btn danger small" onclick="delReport('${r.id}')">Hapus</button>
     </div></div>`;
 }
 
@@ -461,6 +593,13 @@ function renderCharts(data){
   chComp=new Chart(document.getElementById('chartComp'),{type:'bar',
     data:{labels:compLabels.length?compLabels:['Belum ada data'],datasets:[{label:'Jumlah',data:compVals.length?compVals:[0],backgroundColor:'#38bdf8',borderRadius:4}]},
     options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
+  const brandMap={};data.forEach(r=>{if(r.brand)brandMap[r.brand]=(brandMap[r.brand]||0)+1;});
+  const brandLabels=Object.keys(brandMap).sort((a,b)=>brandMap[b]-brandMap[a]);
+  const brandVals=brandLabels.map(b=>brandMap[b]);
+  if(chBrand)chBrand.destroy();
+  chBrand=new Chart(document.getElementById('chartBrand'),{type:'bar',
+    data:{labels:brandLabels.length?brandLabels:['Belum ada data'],datasets:[{label:'Jumlah',data:brandVals.length?brandVals:[0],backgroundColor:'#a78bfa',borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});
 }
 
 function renderInsight(data){
@@ -480,11 +619,13 @@ function render(){
   const data=[...cache].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
   const total=data.length,selesai=data.filter(x=>x.status==='Selesai').length,batal=data.filter(x=>x.status==='Batal').length,proses=data.filter(x=>x.status==='Proses').length;
   const perLv=[1,2,3,4].map(l=>data.filter(x=>x.level===l).length);
+  const totalFee=data.filter(x=>x.job_type==='Sampingan').reduce((s,x)=>s+(+x.fee||0),0);
   document.getElementById('statGrid').innerHTML=`
     <div class="stat"><div class="num">${total}</div><div class="lbl">Total Pekerjaan</div></div>
     <div class="stat"><div class="num" style="color:#6ee7b7">${selesai}</div><div class="lbl">Selesai</div></div>
     <div class="stat"><div class="num" style="color:#fcd34d">${proses}</div><div class="lbl">Proses</div></div>
     <div class="stat"><div class="num" style="color:#fca5a5">${batal}</div><div class="lbl">Batal / Gagal</div></div>
+    <div class="stat"><div class="num" style="font-size:20px;color:#a5b4fc">${rupiah(totalFee)}</div><div class="lbl">Pendapatan (Sampingan)</div></div>
     <div class="stat"><div class="num" style="color:#22c55e">${perLv[0]}</div><div class="lbl">Level 1</div></div>
     <div class="stat"><div class="num" style="color:#3b82f6">${perLv[1]}</div><div class="lbl">Level 2</div></div>
     <div class="stat"><div class="num" style="color:#f59e0b">${perLv[2]}</div><div class="lbl">Level 3</div></div>
@@ -496,12 +637,57 @@ function render(){
   const q=(document.getElementById('search').value||'').toLowerCase();
   const fl=document.getElementById('filterLevel').value;
   const fs=document.getElementById('filterStatus').value;
-  const filtered=data.filter(r=>(r.device+' '+(r.customer||'')).toLowerCase().includes(q)&&(!fl||r.level==+fl)&&(!fs||r.status===fs));
+  const fj=document.getElementById('filterJob').value;
+  const filtered=data.filter(r=>((r.device||'')+' '+(r.customer||'')+' '+(r.ticket_no||'')).toLowerCase().includes(q)&&(!fl||r.level==+fl)&&(!fs||r.status===fs)&&(!fj||r.job_type===fj));
   document.getElementById('listGrid').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="empty">Tidak ada laporan yang cocok.</div>';
 }
 
+function publicUrl(id){return location.origin+location.pathname+'#/g/'+id;}
+function copyLink(id){
+  const u=publicUrl(id);
+  if(navigator.clipboard){navigator.clipboard.writeText(u).then(()=>alert('Link garansi disalin:\n'+u),()=>prompt('Salin link garansi:',u));}
+  else prompt('Salin link garansi:',u);
+}
+async function renderPublic(id){
+  document.querySelector('header').style.display='none';
+  document.querySelector('.container').style.display='none';
+  const pv=document.getElementById('publicView');pv.style.display='block';
+  let r=cache.find(x=>x.id===id);
+  if(!r&&db){try{const {data}=await db.from('reports').select('*').eq('id',id).single();r=data;}catch(e){}}
+  if(!r){pv.innerHTML='<div class="pub-card"><div class="empty">Laporan tidak ditemukan atau link tidak valid.</div></div>';return;}
+  const w=warrantyInfo(r);let wBox;
+  if(!r.warranty_days)wBox='<div class="pub-warranty no">Tanpa garansi</div>';
+  else if(w&&w.active)wBox=`<div class="pub-warranty ok">🛡️ Garansi aktif — sisa <b>${w.daysLeft} hari</b><br><small>berlaku s/d ${warrantyEndStr(r)}</small></div>`;
+  else if(w)wBox=`<div class="pub-warranty no">🛡️ Garansi sudah habis<br><small>berakhir ${warrantyEndStr(r)}</small></div>`;
+  else wBox='<div class="pub-warranty no">Garansi aktif setelah unit diambil</div>';
+  const before=photosOnly(getMedia(r,'before'),3);
+  const after=photosOnly(getMedia(r,'after'),3);
+  const comps=(r.components||[]).map(c=>`<span class="chip">${c}</span>`).join('')||'-';
+  pv.innerHTML=`<div class="pub-card"><br>    <h1 style="display:flex;gap:8px;align-items:center">🛠️ FixTrack</h1><br>    <p class="muted">Kartu Servis & Garansi</p><br>    <h2 style="margin-top:12px">${r.brand?r.brand+' ':''}${r.device}</h2><br>    <p class="muted">${r.ticket_no?('🎫 '+r.ticket_no+' • '):''}Customer: ${r.customer||'-'} • Status: ${r.status}</p><br>    ${wBox}<br>    <label>Komponen yang diperbaiki</label><div>${comps}</div><br>    <label>Detail pekerjaan</label><p>${r.tasks||'-'}</p><br>    <p class="muted">Tgl masuk: ${fmtDate(r.date_in)} • Tgl ambil: ${fmtDate(r.date_out)}</p><br>    <div class="ba"><br>      <div class="box"><h4>🔧 BEFORE</h4><div class="photo-grid">${before.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><br>      <div class="box"><h4>✅ AFTER</h4><div class="photo-grid">${after.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><br>    </div><br>  </div>`;
+}
+function handleRoute(){
+  const m=location.hash.match(/^#\/g\/(.+)$/);
+  if(m){renderPublic(decodeURIComponent(m[1]));return true;}
+  document.querySelector('header').style.display='';
+  document.querySelector('.container').style.display='';
+  document.getElementById('publicView').style.display='none';
+  return false;
+}
+function doPrint(id){
+  const r=cache.find(x=>x.id===id);if(!r)return;
+  const lv=LEVELS[r.level];
+  const before=photosOnly(getMedia(r,'before'),3);
+  const after=photosOnly(getMedia(r,'after'),3);
+  const w=warrantyInfo(r);
+  const wTxt=!r.warranty_days?'Tanpa garansi':(w?(w.active?('Aktif, sisa '+w.daysLeft+' hari (s/d '+warrantyEndStr(r)+')'):('Habis ('+warrantyEndStr(r)+')')):'Mulai setelah pengambilan');
+  const comps=(r.components||[]).join(', ')||'-';
+  const money=r.job_type==='Sampingan'?('<tr><td>Biaya</td><td>'+rupiah(r.fee)+'</td><td>Pembayaran</td><td>'+(r.payment_status||'-')+'</td></tr>'):'';
+  document.getElementById('printArea').innerHTML=`<br>    <h1>🛠️ FixTrack — Laporan Servis</h1><br>    <div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span><span>Jenis: ${r.job_type||'-'}</span></div><br>    <table class="print-tbl"><br>      <tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><br>      <tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><br>      <tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><br>      <tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><br>      <tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><br>      <tr><td>Komponen</td><td colspan="3">${comps}</td></tr><br>      ${money}<br>    </table><br>    <h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><br>    <div class="print-ba"><br>      <div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><br>      <div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><br>    </div><br>    <p class="print-foot">Dicetak dari FixTrack • ${fmtDate(todayStr())}</p>`;
+  window.print();
+}
 buildCompChecks();
-if(db){refresh();}else{render();}
+if(db){loadAll().then(()=>{if(!handleRoute())render();});}else{render();}
+window.addEventListener('hashchange',()=>{if(!handleRoute())render();});
 </script>
 </body>
 </html>

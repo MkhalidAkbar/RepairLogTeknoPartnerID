@@ -37,6 +37,7 @@
   .pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
   .pill.proses{background:#78350f;color:#fcd34d;}
   .pill.selesai{background:#064e3b;color:#6ee7b7;}
+  .pill.batal{background:#7f1d1d;color:#fecaca;}
   .chip{display:inline-block;background:var(--card2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-size:11px;margin:2px 2px 0 0;}
   .muted{color:var(--muted);font-size:13px;}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
@@ -124,6 +125,7 @@
         <option value="">Semua Status</option>
         <option value="Proses">Proses</option>
         <option value="Selesai">Selesai</option>
+        <option value="Batal">Batal / Gagal</option>
       </select>
       <button class="btn" onclick="openForm()">+ Tambah Laporan</button>
     </div>
@@ -149,7 +151,7 @@
           <option value="4">Level 4 - Sangat Berat (motherboard, BGA)</option>
         </select></div>
       <div><label>Status</label>
-        <select id="f_status"><option>Proses</option><option>Selesai</option></select></div>
+        <select id="f_status"><option>Proses</option><option>Selesai</option><option value="Batal">Batal / Gagal</option></select></div>
     </div>
     <label>Komponen / Bagian yang diperbaiki</label>
     <div class="checks" id="compChecks"></div>
@@ -428,7 +430,7 @@ function card(r){const lv=LEVELS[r.level];const comps=(r.components||[]).slice(0
     <div class="row"><h3>${r.device}</h3><span class="badge" style="background:${lv.color}">Lv ${r.level}</span></div>
     <div class="muted">${r.customer||'Tanpa nama customer'}</div>
     ${comps?`<div class="muted">🔎 ${comps}</div>`:''}
-    <div class="row"><span class="pill ${r.status==='Selesai'?'selesai':'proses'}">${r.status}</span>
+    <div class="row"><span class="pill ${r.status==='Selesai'?'selesai':(r.status==='Batal'?'batal':'proses')}">${r.status}</span>
       <span class="muted">${nMedia?('📷 '+nMedia+' • '):''}${fmt(r.updated_at)}</span></div>
     <div class="actions">
       <button class="btn small" onclick="openDetail('${r.id}')">Detail</button>
@@ -476,12 +478,13 @@ function renderInsight(data){
 
 function render(){
   const data=[...cache].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
-  const total=data.length,selesai=data.filter(x=>x.status==='Selesai').length,proses=total-selesai;
+  const total=data.length,selesai=data.filter(x=>x.status==='Selesai').length,batal=data.filter(x=>x.status==='Batal').length,proses=data.filter(x=>x.status==='Proses').length;
   const perLv=[1,2,3,4].map(l=>data.filter(x=>x.level===l).length);
   document.getElementById('statGrid').innerHTML=`
     <div class="stat"><div class="num">${total}</div><div class="lbl">Total Pekerjaan</div></div>
     <div class="stat"><div class="num" style="color:#6ee7b7">${selesai}</div><div class="lbl">Selesai</div></div>
     <div class="stat"><div class="num" style="color:#fcd34d">${proses}</div><div class="lbl">Proses</div></div>
+    <div class="stat"><div class="num" style="color:#fca5a5">${batal}</div><div class="lbl">Batal / Gagal</div></div>
     <div class="stat"><div class="num" style="color:#22c55e">${perLv[0]}</div><div class="lbl">Level 1</div></div>
     <div class="stat"><div class="num" style="color:#3b82f6">${perLv[1]}</div><div class="lbl">Level 2</div></div>
     <div class="stat"><div class="num" style="color:#f59e0b">${perLv[2]}</div><div class="lbl">Level 3</div></div>

@@ -157,7 +157,7 @@
   </div>
 </div>
 <header>
-  <h1 id="brandTitle">🛠️ RepairLog <small>Portofolio Teknisi Laptop</small></h1>
+  <h1>🛠️ RepairLog <small>Portofolio Teknisi Laptop</small></h1>
   <nav>
     <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
     <button id="navList" onclick="showTab('list')">Laporan</button>
@@ -305,23 +305,6 @@
       </div>
       <button class="btn small" id="bioToggleBtn" onclick="toggleBiometric()">Aktifkan</button>
     </div>
-    <div class="set-row" style="display:block">
-      <div style="font-weight:600;margin-bottom:4px">🏷️ Branding Toko</div>
-      <div class="muted" style="font-size:12px">Ubah nama, tagline, logo, warna, & prefix tiket. Berlaku di header, kartu garansi publik, dan cetak PDF.</div>
-      <label>Nama toko</label>
-      <input id="brName" placeholder="cth: Service Laptop Jaya" />
-      <label>Tagline</label>
-      <input id="brTagline" placeholder="cth: Spesialis Servis Laptop" />
-      <div class="frow">
-        <div><label>Logo (emoji)</label><input id="brLogo" maxlength="4" placeholder="🛠️" /></div>
-        <div><label>Warna aksen</label><input id="brColor" type="color" style="height:42px;padding:4px" /></div>
-      </div>
-      <div class="frow">
-        <div><label>Prefix tiket Perusahaan</label><input id="brPrefixCo" placeholder="RL" /></div>
-        <div><label>Prefix tiket Sampingan</label><input id="brPrefixSide" placeholder="TPID" /></div>
-      </div>
-      <button class="btn small" onclick="saveBrandFromForm()" style="margin-top:12px">💾 Simpan Branding</button>
-    </div>
     <div class="actions" style="justify-content:flex-end;margin-top:18px">
       <button class="btn secondary small" onclick="closeSettings()">Tutup</button>
     </div>
@@ -348,17 +331,6 @@
 // ====== KONFIGURASI SUPABASE (WAJIB DIISI) ======
 const SUPABASE_URL = 'https://yahxcwqfuackrbyubppc.supabase.co';      // cth: https://abcd.supabase.co
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHhjd3FmdWFja3JieXVicHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzQyMTgsImV4cCI6MjA5ODI1MDIxOH0.pBZt06Ww2U29xsI4ZvADZUrAHP9KbnqzbqjqAgosNAc';    // anon public key
-// =================================================
-
-// ====== KONFIGURASI BRANDING (white-label) ======
-// Nilai default di bawah bisa diganti langsung di sini per toko,
-// atau diubah oleh pemilik lewat menu ⚙️ Pengaturan (tersimpan di perangkat).
-const BRAND_DEFAULT={name:'RepairLog',tagline:'Portofolio Teknisi Laptop',logo:'🛠️',color:'#6366f1',ticketCompany:'RL',ticketSide:'TPID'};
-function loadBrand(){let b={};try{b=JSON.parse(localStorage.getItem('rl_brand')||'{}');}catch(e){}return Object.assign({},BRAND_DEFAULT,b);}
-let BRAND=loadBrand();
-function saveBrand(b){BRAND=Object.assign({},BRAND_DEFAULT,b);localStorage.setItem('rl_brand',JSON.stringify(BRAND));applyBrand();}
-function applyBrand(){document.title=BRAND.name+' — '+BRAND.tagline;const h=document.getElementById('brandTitle');if(h)h.innerHTML=BRAND.logo+' '+BRAND.name+' <small>'+BRAND.tagline+'</small>';document.documentElement.style.setProperty('--accent',BRAND.color);}
-function saveBrandFromForm(){const b={name:document.getElementById('brName').value.trim()||BRAND_DEFAULT.name,tagline:document.getElementById('brTagline').value.trim()||BRAND_DEFAULT.tagline,logo:document.getElementById('brLogo').value.trim()||BRAND_DEFAULT.logo,color:document.getElementById('brColor').value||BRAND_DEFAULT.color,ticketCompany:document.getElementById('brPrefixCo').value.trim().toUpperCase()||BRAND_DEFAULT.ticketCompany,ticketSide:document.getElementById('brPrefixSide').value.trim().toUpperCase()||BRAND_DEFAULT.ticketSide};saveBrand(b);alert('Branding disimpan.');}
 // =================================================
 
 let db=null;
@@ -424,7 +396,7 @@ function toggleJobType(){
   document.getElementById('feeWrap').style.display=(document.getElementById('f_jobtype').value==='Sampingan')?'grid':'none';
 }
 function genTicket(jobType,dateStr){
-  const prefix=jobType==='Perusahaan'?BRAND.ticketCompany:BRAND.ticketSide;
+  const prefix=jobType==='Perusahaan'?'RL':'TPID';
   const p=dateStr.split('-');
   const n=cache.filter(r=>r.job_type===jobType&&String(r.date_in).slice(0,10)===dateStr).length+1;
   return prefix+'/'+p[0]+'/'+p[1]+'/'+p[2]+'/'+String(n).padStart(3,'0');
@@ -751,7 +723,7 @@ async function renderPublic(id){
   const before=photosOnly(getMedia(r,'before'),3);
   const after=photosOnly(getMedia(r,'after'),3);
   const comps=(r.components||[]).map(c=>`<span class="chip">${c}</span>`).join('')||'-';
-  pv.innerHTML=`<div class="pub-card"><h1 style="display:flex;gap:8px;align-items:center">${BRAND.logo} ${BRAND.name}</h1><p class="muted">Kartu Servis & Garansi</p><h2 style="margin-top:12px">${r.brand?r.brand+' ':''}${r.device}</h2><p class="muted">${r.ticket_no?('🎫 '+r.ticket_no+' • '):''}Customer: ${r.customer||'-'} • Status: ${r.status}</p>${wBox}<label>Komponen yang diperbaiki</label><div>${comps}</div><label>Detail pekerjaan</label><p>${r.tasks||'-'}</p><p class="muted">Tgl masuk: ${fmtDate(r.date_in)} • Tgl ambil: ${fmtDate(r.date_out)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px"><div class="box"><h4>🔧 BEFORE</h4><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><div class="box"><h4>✅ AFTER</h4><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div></div></div>`;
+  pv.innerHTML=`<div class="pub-card"><h1 style="display:flex;gap:8px;align-items:center">🛠️ RepairLog</h1><p class="muted">Kartu Servis & Garansi</p><h2 style="margin-top:12px">${r.brand?r.brand+' ':''}${r.device}</h2><p class="muted">${r.ticket_no?('🎫 '+r.ticket_no+' • '):''}Customer: ${r.customer||'-'} • Status: ${r.status}</p>${wBox}<label>Komponen yang diperbaiki</label><div>${comps}</div><label>Detail pekerjaan</label><p>${r.tasks||'-'}</p><p class="muted">Tgl masuk: ${fmtDate(r.date_in)} • Tgl ambil: ${fmtDate(r.date_out)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px"><div class="box"><h4>🔧 BEFORE</h4><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div><div class="box"><h4>✅ AFTER</h4><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'<span class="muted">-</span>'}</div></div></div></div>`;
 }
 function handleRoute(){
   const m=location.hash.match(/^#\/g\/(.+)$/);
@@ -770,7 +742,7 @@ function doPrint(id){
   const wTxt=!r.warranty_days?'Tanpa garansi':(w?(w.active?('Aktif, sisa '+w.daysLeft+' hari (s/d '+warrantyEndStr(r)+')'):('Habis ('+warrantyEndStr(r)+')')):'Mulai setelah pengambilan');
   const comps=(r.components||[]).join(', ')||'-';
   const money=r.job_type==='Sampingan'?('<tr><td>Biaya</td><td>'+rupiah(r.fee)+'</td><td>Pembayaran</td><td>'+(r.payment_status||'-')+'</td></tr>'):'';
-  document.getElementById('printArea').innerHTML=`<h1>${BRAND.logo} ${BRAND.name} — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari ${BRAND.name} • ${fmtDate(todayStr())}</p>`;
+  document.getElementById('printArea').innerHTML=`<h1>🛠️ RepairLog — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari RepairLog • ${fmtDate(todayStr())}</p>`;
   window.print();
 }
 // ================= AUTH, SESI TUNGGAL & BIOMETRIK =================
@@ -885,7 +857,7 @@ async function enableBiometric(){
     }
     const att=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
-      rp:{name:BRAND.name},
+      rp:{name:'RepairLog'},
       user:{id:new TextEncoder().encode(user.id),name:user.email||'teknisi',displayName:user.email||'Teknisi'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
@@ -920,12 +892,6 @@ function openSettings(){
   const on=bioEnabled();
   document.getElementById('bioToggleBtn').innerText=on?'Nonaktifkan':'Aktifkan';
   document.getElementById('bioStatus').innerText=on?'Aktif di perangkat ini — tap sidik jari untuk masuk.':'Masuk cukup dengan biometrik di perangkat ini.';
-  document.getElementById('brName').value=BRAND.name;
-  document.getElementById('brTagline').value=BRAND.tagline;
-  document.getElementById('brLogo').value=BRAND.logo;
-  document.getElementById('brColor').value=BRAND.color;
-  document.getElementById('brPrefixCo').value=BRAND.ticketCompany;
-  document.getElementById('brPrefixSide').value=BRAND.ticketSide;
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
@@ -942,7 +908,6 @@ async function toggleBiometric(){
 
 // ---- boot ----
 buildCompChecks();
-applyBrand();
 async function boot(){
   if(location.hash.match(/^#\/g\//)){authReady=false;if(db){try{await loadAll();}catch(e){}}handleRoute();return;}
   if(!db){render();return;}

@@ -787,7 +787,7 @@ async function doLogin(){
   document.getElementById('authPass').value='';
   localStorage.removeItem('rl_locked');
   await afterLogin();
-  offerBiometric();
+  // Tidak menawarkan sidik jari otomatis — aktifkan manual lewat menu ⚙️ Pengaturan.
 }
 async function afterLogin(){
   authReady=true;

@@ -85,6 +85,11 @@
   .pub-warranty.ok{background:#064e3b;color:#6ee7b7;}
   .pub-warranty.no{background:#7f1d1d;color:#fecaca;}
   #printArea{display:none;}
+  .auth-screen{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px;z-index:500;}
+  .auth-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:380px;width:100%;}
+  .auth-box h1{font-size:24px;display:flex;gap:8px;align-items:center;}
+  .auth-box h2{font-size:18px;margin-top:6px;}
+  .auth-err{color:#fca5a5;font-size:13px;min-height:18px;margin:8px 0;}
   @media print{
     body{background:#fff;}
     header,.container,.modal-bg,.lb,#publicView{display:none !important;}
@@ -115,12 +120,28 @@
 </style>
 </head>
 <body>
+<div class="auth-screen" id="authScreen" style="display:none">
+  <div class="auth-box">
+    <h1>🛠️ RepairLog</h1>
+    <h2 id="authTitle">Masuk</h2>
+    <p class="muted" id="authSub">Masuk untuk mengelola laporan</p>
+    <div class="auth-err" id="authError"></div>
+    <label>Email</label>
+    <input id="authEmail" type="email" placeholder="email@anda.com" autocomplete="username" />
+    <label>Password</label>
+    <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn" id="authBtn" onclick="doLogin()" style="width:100%;margin-top:14px">Masuk</button>
+    <button class="btn secondary" id="bioBtn" onclick="doBiometric()" style="width:100%;margin-top:10px;display:none">👆 Masuk dengan Sidik Jari</button>
+  </div>
+</div>
 <header>
   <h1>🛠️ RepairLog <small>Portofolio Teknisi Laptop</small></h1>
   <nav>
     <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
     <button id="navList" onclick="showTab('list')">Laporan</button>
     <button class="btn small" onclick="openForm()">+ Tambah</button>
+    <button class="btn small secondary" id="bioEnableBtn" onclick="enableBiometric()" title="Aktifkan login sidik jari">👆</button>
+    <button class="btn small secondary" onclick="doLogout()">Keluar</button>
   </nav>
 </header>
 
@@ -526,7 +547,7 @@ function openDetail(id){
       <div class="box"><h4>✅ AFTER</h4><p class="muted">${r.after_notes||'Belum diisi'}</p><div class="thumbs">${aThumbs}</div></div>
     </div>
     <div class="actions" style="margin-top:18px;justify-content:flex-end">
-      ${r.status==='Selesai'?`<button class="btn secondary small" onclick="copyLink('${r.id}')">Link Garansi</button>`:''}
+      ${(r.status==='Selesai'&&r.job_type==='Perusahaan')?`<button class="btn secondary small" onclick="copyLink('${r.id}')">Link Garansi</button>`:''}
       <button class="btn secondary small" onclick="doPrint('${r.id}')">Cetak / PDF</button>
       <button class="btn small" onclick="closeDetail();openForm('${r.id}')">Edit</button>
       <button class="btn small" onclick="closeDetail()">Tutup</button>
@@ -654,7 +675,7 @@ async function renderPublic(id){
   const pv=document.getElementById('publicView');pv.style.display='block';
   let r=cache.find(x=>x.id===id);
   if(!r&&db){try{const {data}=await db.from('reports').select('*').eq('id',id).single();r=data;}catch(e){}}
-  if(!r){pv.innerHTML='<div class="pub-card"><div class="empty">Laporan tidak ditemukan atau link tidak valid.</div></div>';return;}
+  if(!r||r.job_type!=='Perusahaan'){pv.innerHTML='<div class="pub-card"><div class="empty">Laporan tidak ditemukan atau link tidak valid.</div></div>';return;}
   const w=warrantyInfo(r);let wBox;
   if(!r.warranty_days)wBox='<div class="pub-warranty no">Tanpa garansi</div>';
   else if(w&&w.active)wBox=`<div class="pub-warranty ok">🛡️ Garansi aktif — sisa <b>${w.daysLeft} hari</b><br><small>berlaku s/d ${warrantyEndStr(r)}</small></div>`;
@@ -685,9 +706,132 @@ function doPrint(id){
   document.getElementById('printArea').innerHTML=`<h1>🛠️ RepairLog — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span><span>Jenis: ${r.job_type||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari RepairLog • ${fmtDate(todayStr())}</p>`;
   window.print();
 }
+// ================= AUTH, SESI TUNGGAL & BIOMETRIK =================
+const IDLE_LIMIT_MS=30*60*1000;   // auto-lock setelah 30 menit tanpa aktivitas
+let idleTimer=null,sessChannel=null,mySid=null,authReady=false;
+
+function showAuth(locked){
+  document.getElementById('authScreen').style.display='flex';
+  document.querySelector('header').style.display='none';
+  document.querySelector('.container').style.display='none';
+  document.getElementById('publicView').style.display='none';
+  document.getElementById('authTitle').innerText=locked?'🔒 Terkunci':'Masuk';
+  document.getElementById('authSub').innerText=locked?'Sesi terkunci karena 30 menit tidak aktif. Buka kembali untuk lanjut.':'Masuk untuk mengelola laporan';
+  document.getElementById('bioBtn').style.display=bioEnabled()?'block':'none';
+  document.getElementById('authError').innerText='';
+}
+function showApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.querySelector('header').style.display='';
+  document.querySelector('.container').style.display='';
+}
+async function doLogin(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPass').value;
+  const errEl=document.getElementById('authError');
+  if(!db){errEl.innerText='Supabase belum dikonfigurasi.';return;}
+  const btn=document.getElementById('authBtn');btn.disabled=true;btn.innerText='Memproses...';
+  const {error}=await db.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false;btn.innerText='Masuk';
+  if(error){errEl.innerText='Gagal masuk: '+error.message;return;}
+  document.getElementById('authPass').value='';
+  localStorage.removeItem('rl_locked');
+  await afterLogin();
+  offerBiometric();
+}
+async function afterLogin(){
+  authReady=true;
+  await claimSession();
+  showApp();
+  resetIdle();
+  await loadAll();
+  if(!handleRoute())render();
+}
+async function doLogout(){
+  stopIdle();localStorage.removeItem('rl_locked');
+  if(sessChannel){try{db.removeChannel(sessChannel);}catch(e){}sessChannel=null;}
+  try{await db.auth.signOut();}catch(e){}
+  authReady=false;showAuth(false);
+}
+async function forceLogout(msg){
+  stopIdle();localStorage.removeItem('rl_locked');
+  if(sessChannel){try{db.removeChannel(sessChannel);}catch(e){}sessChannel=null;}
+  try{await db.auth.signOut();}catch(e){}
+  authReady=false;showAuth(false);
+  document.getElementById('authError').innerText=msg||'';
+}
+
+// ---- sesi tunggal (1 perangkat aktif) ----
+async function claimSession(){
+  const {data:{user}}=await db.auth.getUser();
+  if(!user)return;
+  mySid=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random());
+  await db.from('active_session').upsert({user_id:user.id,current_sid:mySid,updated_at:new Date().toISOString()});
+  if(sessChannel){try{db.removeChannel(sessChannel);}catch(e){}}
+  sessChannel=db.channel('sess-'+user.id)
+    .on('postgres_changes',{event:'*',schema:'public',table:'active_session',filter:'user_id=eq.'+user.id},payload=>{
+      const sid=payload.new&&payload.new.current_sid;
+      if(sid&&mySid&&sid!==mySid){forceLogout('Anda login di perangkat lain, sesi di perangkat ini diakhiri.');}
+    }).subscribe();
+}
+
+// ---- auto-lock 30 menit idle ----
+function resetIdle(){if(!authReady)return;clearTimeout(idleTimer);idleTimer=setTimeout(lockApp,IDLE_LIMIT_MS);}
+function stopIdle(){clearTimeout(idleTimer);}
+function lockApp(){stopIdle();localStorage.setItem('rl_locked','1');showAuth(true);}
+['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,()=>{if(authReady)resetIdle();},{passive:true}));
+
+// ---- biometrik (WebAuthn) — cara praktis tanpa server ----
+function bioEnabled(){return !!localStorage.getItem('rl_bio_id');}
+async function offerBiometric(){
+  if(bioEnabled()||!window.PublicKeyCredential)return;
+  if(confirm('Aktifkan login sidik jari/biometrik di perangkat ini? Lain kali cukup tap sidik jari tanpa ketik password.'))await enableBiometric();
+}
+async function enableBiometric(){
+  if(!window.PublicKeyCredential){alert('Perangkat/browser ini tidak mendukung biometrik.');return;}
+  try{
+    const {data:{user}}=await db.auth.getUser();
+    if(!user){alert('Login dulu sebelum mengaktifkan sidik jari.');return;}
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{name:'RepairLog'},
+      user:{id:new TextEncoder().encode(user.id),name:user.email||'teknisi',displayName:user.email||'Teknisi'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+      timeout:60000}});
+    localStorage.setItem('rl_bio_id',btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+    alert('Sidik jari diaktifkan untuk perangkat ini.');
+  }catch(e){alert('Gagal mengaktifkan biometrik: '+e.message);}
+}
+async function doBiometric(){
+  const errEl=document.getElementById('authError');
+  const idB64=localStorage.getItem('rl_bio_id');
+  if(!idB64){errEl.innerText='Biometrik belum diaktifkan di perangkat ini.';return;}
+  try{
+    const rawId=Uint8Array.from(atob(idB64),c=>c.charCodeAt(0));
+    await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:rawId}],userVerification:'required',timeout:60000}});
+  }catch(e){errEl.innerText='Verifikasi sidik jari gagal: '+e.message;return;}
+  const {data:{session}}=await db.auth.getSession();
+  if(!session){errEl.innerText='Sesi sudah berakhir. Masuk dengan email & password sekali lagi.';return;}
+  localStorage.removeItem('rl_locked');
+  await afterLogin();
+}
+
+// ---- boot ----
 buildCompChecks();
-if(db){loadAll().then(()=>{if(!handleRoute())render();});}else{render();}
-window.addEventListener('hashchange',()=>{if(!handleRoute())render();});
+async function boot(){
+  if(location.hash.match(/^#\/g\//)){authReady=false;if(db){try{await loadAll();}catch(e){}}handleRoute();return;}
+  if(!db){render();return;}
+  const {data:{session}}=await db.auth.getSession();
+  if(session&&localStorage.getItem('rl_locked')){authReady=false;showAuth(true);return;}
+  if(session){await afterLogin();}
+  else{showAuth(false);}
+}
+boot();
+window.addEventListener('hashchange',()=>{
+  if(location.hash.match(/^#\/g\//)){handleRoute();return;}
+  if(authReady){if(!handleRoute())render();}
+});
 </script>
 </body>
 </html>

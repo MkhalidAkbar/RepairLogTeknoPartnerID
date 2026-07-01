@@ -97,9 +97,10 @@
   .linklike{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;text-decoration:underline;margin-top:14px;width:100%;padding:6px;}
   .set-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
   @media print{
+    @page{margin:0;}
     body{background:#fff;}
     header,.container,.modal-bg,.lb,#publicView{display:none !important;}
-    #printArea{display:block !important;color:#000;padding:10px;}
+    #printArea{display:block !important;color:#000;padding:14mm 12mm;}
     #printArea h1{font-size:18px;margin-bottom:8px;}
     .print-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px;border-bottom:1px solid #000;padding-bottom:6px;}
     .print-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
@@ -107,6 +108,8 @@
     .print-tbl td:nth-child(odd){background:#f0f0f0;font-weight:600;width:95px;}
     .print-ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
     .print-ba h4{font-size:13px;margin-bottom:4px;}
+    .print-ba .photo-grid{grid-template-columns:1fr !important;gap:6px;}
+    .print-ba .photo-grid img{max-height:60mm !important;width:auto !important;max-width:100% !important;object-fit:contain;border:1px solid #bbb;display:block;margin:0 auto 6px;}
     .photo-grid img{border:1px solid #bbb;}
     .print-foot{margin-top:14px;font-size:10px;color:#666;text-align:center;}
   }
@@ -739,7 +742,7 @@ function doPrint(id){
   const wTxt=!r.warranty_days?'Tanpa garansi':(w?(w.active?('Aktif, sisa '+w.daysLeft+' hari (s/d '+warrantyEndStr(r)+')'):('Habis ('+warrantyEndStr(r)+')')):'Mulai setelah pengambilan');
   const comps=(r.components||[]).join(', ')||'-';
   const money=r.job_type==='Sampingan'?('<tr><td>Biaya</td><td>'+rupiah(r.fee)+'</td><td>Pembayaran</td><td>'+(r.payment_status||'-')+'</td></tr>'):'';
-  document.getElementById('printArea').innerHTML=`<h1>🛠️ RepairLog — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span><span>Jenis: ${r.job_type||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari RepairLog • ${fmtDate(todayStr())}</p>`;
+  document.getElementById('printArea').innerHTML=`<h1>🛠️ RepairLog — Laporan Servis</h1><div class="print-meta"><span>Tiket: ${r.ticket_no||'-'}</span></div><table class="print-tbl"><tr><td>Device</td><td>${r.device}</td><td>Merek</td><td>${r.brand||'-'}</td></tr><tr><td>Customer</td><td>${r.customer||'-'}</td><td>WhatsApp</td><td>${r.customer_phone||'-'}</td></tr><tr><td>Level</td><td>${lv.name}</td><td>Status</td><td>${r.status}</td></tr><tr><td>Tgl Masuk</td><td>${fmtDate(r.date_in)}</td><td>Tgl Ambil</td><td>${fmtDate(r.date_out)}</td></tr><tr><td>Garansi</td><td colspan="3">${wTxt}</td></tr><tr><td>Komponen</td><td colspan="3">${comps}</td></tr>${money}</table><h3>Pekerjaan</h3><p>${r.tasks||'-'}</p><div class="print-ba"><div><h4>BEFORE</h4><p>${r.before_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${before.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div><div><h4>AFTER</h4><p>${r.after_notes||'-'}</p><div class="photo-grid" style="grid-template-columns:1fr">${after.map(m=>`<img src="${m.url}">`).join('')||'-'}</div></div></div><p class="print-foot">Dicetak dari RepairLog • ${fmtDate(todayStr())}</p>`;
   window.print();
 }
 // ================= AUTH, SESI TUNGGAL & BIOMETRIK =================

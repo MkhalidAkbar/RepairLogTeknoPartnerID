@@ -90,6 +90,12 @@
   .auth-box h1{font-size:24px;display:flex;gap:8px;align-items:center;}
   .auth-box h2{font-size:18px;margin-top:6px;}
   .auth-err{color:#fca5a5;font-size:13px;min-height:18px;margin:8px 0;}
+  .bio-circle{width:132px;height:132px;border-radius:50%;background:var(--card2);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:6px auto 10px;cursor:pointer;color:var(--accent);transition:transform .15s,background .15s;}
+  .bio-circle:hover{background:#31405a;transform:scale(1.04);}
+  .bio-circle:active{transform:scale(.97);}
+  .bio-circle svg{width:64px;height:64px;}
+  .linklike{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;text-decoration:underline;margin-top:14px;width:100%;padding:6px;}
+  .set-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
   @media print{
     body{background:#fff;}
     header,.container,.modal-bg,.lb,#publicView{display:none !important;}
@@ -121,17 +127,30 @@
 </head>
 <body>
 <div class="auth-screen" id="authScreen" style="display:none">
-  <div class="auth-box">
-    <h1>🛠️ RepairLog</h1>
-    <h2 id="authTitle">Masuk</h2>
-    <p class="muted" id="authSub">Masuk untuk mengelola laporan</p>
+  <div class="auth-box" style="text-align:center">
+    <div class="bio-circle" id="bioCircle" onclick="bioTap()" title="Masuk dengan sidik jari">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/>
+        <path d="M5 19.5C5.5 18 6 15 6 12c0-.7.12-1.37.34-2"/>
+        <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+        <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+        <path d="M8.65 22c.21-.66.45-1.32.57-2"/>
+        <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+        <path d="M2 16h.01"/>
+        <path d="M21.8 16c.2-2 .13-5.35 0-6"/>
+        <path d="M9 6.8a6 6 0 0 1 9 5.2c0 .47 0 1.17-.02 2"/>
+      </svg>
+    </div>
+    <p class="muted" id="authSub">Tap sidik jari untuk masuk</p>
     <div class="auth-err" id="authError"></div>
-    <label>Email</label>
-    <input id="authEmail" type="email" placeholder="email@anda.com" autocomplete="username" />
-    <label>Password</label>
-    <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
-    <button class="btn" id="authBtn" onclick="doLogin()" style="width:100%;margin-top:14px">Masuk</button>
-    <button class="btn secondary" id="bioBtn" onclick="doBiometric()" style="width:100%;margin-top:10px;display:none">👆 Masuk dengan Sidik Jari</button>
+    <div id="pwForm" style="display:none;text-align:left">
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="email@anda.com" autocomplete="username" />
+      <label>Password</label>
+      <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+      <button class="btn" id="authBtn" onclick="doLogin()" style="width:100%;margin-top:14px">Masuk</button>
+    </div>
+    <button class="linklike" id="pwToggle" onclick="togglePwForm()">Masuk dengan email & password</button>
   </div>
 </div>
 <header>
@@ -140,7 +159,7 @@
     <button id="navDash" class="active" onclick="showTab('dash')">Dashboard</button>
     <button id="navList" onclick="showTab('list')">Laporan</button>
     <button class="btn small" onclick="openForm()">+ Tambah</button>
-    <button class="btn small secondary" id="bioEnableBtn" onclick="enableBiometric()" title="Aktifkan login sidik jari">👆</button>
+    <button class="btn small secondary" onclick="openSettings()" title="Pengaturan">⚙️</button>
     <button class="btn small secondary" onclick="doLogout()">Keluar</button>
   </nav>
 </header>
@@ -270,6 +289,23 @@
 <!-- MODAL DETAIL -->
 <div class="modal-bg" id="detailModal">
   <div class="modal" id="detailContent"></div>
+</div>
+
+<!-- MODAL PENGATURAN -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal" style="max-width:460px">
+    <h2>⚙️ Pengaturan</h2>
+    <div class="set-row">
+      <div>
+        <div style="font-weight:600">👆 Login sidik jari</div>
+        <div class="muted" id="bioStatus">Masuk cukup dengan biometrik di perangkat ini.</div>
+      </div>
+      <button class="btn small" id="bioToggleBtn" onclick="toggleBiometric()">Aktifkan</button>
+    </div>
+    <div class="actions" style="justify-content:flex-end;margin-top:18px">
+      <button class="btn secondary small" onclick="closeSettings()">Tutup</button>
+    </div>
+  </div>
 </div>
 
 <div id="publicView"></div>
@@ -547,7 +583,7 @@ function openDetail(id){
       <div class="box"><h4>✅ AFTER</h4><p class="muted">${r.after_notes||'Belum diisi'}</p><div class="thumbs">${aThumbs}</div></div>
     </div>
     <div class="actions" style="margin-top:18px;justify-content:flex-end">
-      ${(r.status==='Selesai'&&r.job_type==='Perusahaan')?`<button class="btn secondary small" onclick="copyLink('${r.id}')">Link Garansi</button>`:''}
+      ${r.status==='Selesai'?`<button class="btn secondary small" onclick="copyLink('${r.id}')">Link Garansi</button>`:''}
       <button class="btn secondary small" onclick="doPrint('${r.id}')">Cetak / PDF</button>
       <button class="btn small" onclick="closeDetail();openForm('${r.id}')">Edit</button>
       <button class="btn small" onclick="closeDetail()">Tutup</button>
@@ -674,8 +710,8 @@ async function renderPublic(id){
   document.querySelector('.container').style.display='none';
   const pv=document.getElementById('publicView');pv.style.display='block';
   let r=cache.find(x=>x.id===id);
-  if(!r&&db){try{const {data}=await db.from('reports').select('*').eq('id',id).single();r=data;}catch(e){}}
-  if(!r||r.job_type!=='Perusahaan'){pv.innerHTML='<div class="pub-card"><div class="empty">Laporan tidak ditemukan atau link tidak valid.</div></div>';return;}
+  if(!r&&db){try{const {data}=await db.from('reports_public').select('*').eq('id',id).single();r=data;}catch(e){}}
+  if(!r){pv.innerHTML='<div class="pub-card"><div class="empty">Laporan tidak ditemukan atau link tidak valid.</div></div>';return;}
   const w=warrantyInfo(r);let wBox;
   if(!r.warranty_days)wBox='<div class="pub-warranty no">Tanpa garansi</div>';
   else if(w&&w.active)wBox=`<div class="pub-warranty ok">🛡️ Garansi aktif — sisa <b>${w.daysLeft} hari</b><br><small>berlaku s/d ${warrantyEndStr(r)}</small></div>`;
@@ -709,16 +745,28 @@ function doPrint(id){
 // ================= AUTH, SESI TUNGGAL & BIOMETRIK =================
 const IDLE_LIMIT_MS=30*60*1000;   // auto-lock setelah 30 menit tanpa aktivitas
 let idleTimer=null,sessChannel=null,mySid=null,authReady=false;
+let lastCred=null;                // kredensial login terakhir (untuk daftar sidik jari)
 
 function showAuth(locked){
   document.getElementById('authScreen').style.display='flex';
   document.querySelector('header').style.display='none';
   document.querySelector('.container').style.display='none';
   document.getElementById('publicView').style.display='none';
-  document.getElementById('authTitle').innerText=locked?'🔒 Terkunci':'Masuk';
-  document.getElementById('authSub').innerText=locked?'Sesi terkunci karena 30 menit tidak aktif. Buka kembali untuk lanjut.':'Masuk untuk mengelola laporan';
-  document.getElementById('bioBtn').style.display=bioEnabled()?'block':'none';
+  const be=bioEnabled();
+  document.getElementById('authSub').innerText=be?(locked?'Terkunci — tap sidik jari untuk buka':'Tap sidik jari untuk masuk'):'Masuk untuk mengelola laporan';
+  document.getElementById('pwForm').style.display=be?'none':'block';
+  document.getElementById('pwToggle').style.display=be?'block':'none';
   document.getElementById('authError').innerText='';
+}
+function bioTap(){
+  if(bioEnabled())doBiometric();
+  else togglePwForm(true);
+}
+function togglePwForm(forceShow){
+  const f=document.getElementById('pwForm');
+  const show=(forceShow===true)||f.style.display==='none';
+  f.style.display=show?'block':'none';
+  if(show){const em=document.getElementById('authEmail');if(em)em.focus();}
 }
 function showApp(){
   document.getElementById('authScreen').style.display='none';
@@ -734,6 +782,8 @@ async function doLogin(){
   const {error}=await db.auth.signInWithPassword({email,password:pass});
   btn.disabled=false;btn.innerText='Masuk';
   if(error){errEl.innerText='Gagal masuk: '+error.message;return;}
+  lastCred={email,pass};
+  if(bioEnabled())saveCred(lastCred);   // segarkan kredensial tersimpan untuk sidik jari
   document.getElementById('authPass').value='';
   localStorage.removeItem('rl_locked');
   await afterLogin();
@@ -783,6 +833,10 @@ function lockApp(){stopIdle();localStorage.setItem('rl_locked','1');showAuth(tru
 
 // ---- biometrik (WebAuthn) — cara praktis tanpa server ----
 function bioEnabled(){return !!localStorage.getItem('rl_bio_id');}
+// simpan kredensial (di-obfuscate base64) agar sidik jari tetap bisa login walau sesi sudah berakhir
+function saveCred(c){try{localStorage.setItem('rl_cred',btoa(unescape(encodeURIComponent(JSON.stringify(c)))));}catch(e){}}
+function readCred(){try{const v=localStorage.getItem('rl_cred');return v?JSON.parse(decodeURIComponent(escape(atob(v)))):null;}catch(e){return null;}}
+function clearBio(){localStorage.removeItem('rl_bio_id');localStorage.removeItem('rl_cred');}
 async function offerBiometric(){
   if(bioEnabled()||!window.PublicKeyCredential)return;
   if(confirm('Aktifkan login sidik jari/biometrik di perangkat ini? Lain kali cukup tap sidik jari tanpa ketik password.'))await enableBiometric();
@@ -792,14 +846,21 @@ async function enableBiometric(){
   try{
     const {data:{user}}=await db.auth.getUser();
     if(!user){alert('Login dulu sebelum mengaktifkan sidik jari.');return;}
-    const cred=await navigator.credentials.create({publicKey:{
+    let loginCred=lastCred;
+    if(!loginCred||!loginCred.pass){
+      const pw=prompt('Untuk mengaktifkan login sidik jari, masukkan password akun Anda sekali:');
+      if(!pw)return;
+      loginCred={email:user.email,pass:pw};
+    }
+    const att=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
       rp:{name:'RepairLog'},
       user:{id:new TextEncoder().encode(user.id),name:user.email||'teknisi',displayName:user.email||'Teknisi'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
       timeout:60000}});
-    localStorage.setItem('rl_bio_id',btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+    localStorage.setItem('rl_bio_id',btoa(String.fromCharCode(...new Uint8Array(att.rawId))));
+    saveCred(loginCred);
     alert('Sidik jari diaktifkan untuk perangkat ini.');
   }catch(e){alert('Gagal mengaktifkan biometrik: '+e.message);}
 }
@@ -811,10 +872,35 @@ async function doBiometric(){
     const rawId=Uint8Array.from(atob(idB64),c=>c.charCodeAt(0));
     await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:rawId}],userVerification:'required',timeout:60000}});
   }catch(e){errEl.innerText='Verifikasi sidik jari gagal: '+e.message;return;}
-  const {data:{session}}=await db.auth.getSession();
-  if(!session){errEl.innerText='Sesi sudah berakhir. Masuk dengan email & password sekali lagi.';return;}
+  let {data:{session}}=await db.auth.getSession();
+  if(!session){
+    // sesi berakhir (mis. ter-logout paksa dari perangkat lain) -> login ulang otomatis pakai kredensial tersimpan
+    const c=readCred();
+    if(!c){errEl.innerText='Sesi berakhir. Masuk dengan email & password sekali lagi.';return;}
+    const {error}=await db.auth.signInWithPassword({email:c.email,password:c.pass});
+    if(error){errEl.innerText='Gagal masuk: '+error.message+'. Coba email & password.';return;}
+    lastCred=c;
+  }
   localStorage.removeItem('rl_locked');
   await afterLogin();
+}
+// ---- pengaturan ----
+function openSettings(){
+  const on=bioEnabled();
+  document.getElementById('bioToggleBtn').innerText=on?'Nonaktifkan':'Aktifkan';
+  document.getElementById('bioStatus').innerText=on?'Aktif di perangkat ini — tap sidik jari untuk masuk.':'Masuk cukup dengan biometrik di perangkat ini.';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
+async function toggleBiometric(){
+  if(bioEnabled()){
+    if(!confirm('Nonaktifkan login sidik jari di perangkat ini?'))return;
+    clearBio();
+    alert('Login sidik jari dinonaktifkan.');
+  }else{
+    await enableBiometric();
+  }
+  openSettings();
 }
 
 // ---- boot ----
